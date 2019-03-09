@@ -102,3 +102,7 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# config
+/SDK_python/CodeCraft-2019/config*/*
+/SDK_python/.gitignore
