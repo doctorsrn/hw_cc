@@ -106,3 +106,4 @@ venv.bak/
 # config
 /SDK_python/CodeCraft-2019/config*/*
 /SDK_python/.gitignore
+/SDK_python/CodeCraft-2019/src/test.py

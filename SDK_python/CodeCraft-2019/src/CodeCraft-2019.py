@@ -1,6 +1,8 @@
 import logging
 import sys
 
+
+
 logging.basicConfig(level=logging.DEBUG,
                     filename='../logs/CodeCraft-2019.log',
                     format='[%(asctime)s] %(levelname)s [%(funcName)s: %(filename)s, %(lineno)d] %(message)s',
@@ -9,6 +11,10 @@ logging.basicConfig(level=logging.DEBUG,
 
 
 def main():
+    print("hello")
+    a = 3
+    print(a)
+    exit(1)
     if len(sys.argv) != 5:
         logging.info('please input args: car_path, road_path, cross_path, answerPath')
         exit(1)
