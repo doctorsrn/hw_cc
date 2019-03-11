@@ -1,6 +1,6 @@
 import pandas
 import numpy as np
-from util import build_adjacency_list, adj_list_visualize
+from util import build_adjacency_list, adj_list_visualize, get_path
 
 
 def read_from_txt(path_, type_= None):
@@ -52,6 +52,13 @@ if __name__ == "__main__":
     print(df1.shape)
     al = build_adjacency_list(df, df1)
     print(al)
+
+    # 最短路径搜索
+    p = get_path(al, 1, 20)
+    print('shortest path is:', p)
+
+    # 可视化有向图
     adj_list_visualize(al)
+
 
 

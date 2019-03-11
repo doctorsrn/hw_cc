@@ -8,8 +8,6 @@ except ImportError:
     nx = None
 
 
-
-
 def build_adjacency_list(cross_df, road_df):
     """
     brief:从cross和road信息建立邻接表来表示有向图，并定义有向图边的权值
@@ -58,18 +56,39 @@ def adj_list_visualize(adl_list_):
         for to in adl_list_[st].keys():
             G.add_edge(st, to)
 
-    pos = nx.spring_layout(G)
+    # 选择nx.spectral_layout排列节点效果更好一些
+    # pos = nx.spring_layout(G)
+    pos = nx.spectral_layout(G)
 
     # nx.draw_networkx_nodes(G, pos, node_size=700)
-    nx.draw_networkx_labels(G, pos, font_size=20, font_family='sans-serif')
-    nx.draw(G, pos)
+    # nx.draw_networkx_labels(G, pos, font_size=20, font_family='sans-serif')
+    nx.draw(G, pos, with_labels=True)
     plt.show()
-    pass
+    return
 
 
+# TODO: 权重函数还没有进行科学设置
 def weight_func(road_l, road_mv):
     weight = road_l / road_mv
     return weight
+
+
+def get_path(adl_list_, start, end):
+    """
+    brief: 给定起点和终点，从邻接表中搜索得到一条可行路径，满足最优条件
+    :param adl_list_:
+    :param start:
+    :param end:
+    :return:
+    """
+    G = nx.DiGraph()
+    for st in adl_list_.keys():
+        for to in adl_list_[st].keys():
+            G.add_edge(st, to)
+
+    path = nx.algorithms.shortest_path(G, start, end)
+
+    return path
 
 
 if __name__ == "__main__":
