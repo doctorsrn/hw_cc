@@ -1,6 +1,7 @@
 import pandas
 import numpy as np
-from util import build_adjacency_list, adj_list_visualize, get_path
+from util import build_adjacency_list, adj_list_visualize, get_path, build_ad_list_without_edge_id
+from dijkstra.dijkstra import shortest_path, dijkstra
 
 
 def read_from_txt(path_, type_= None):
@@ -30,12 +31,13 @@ def read_from_txt(path_, type_= None):
     return df
 
 
-def write_to_txt(path_):
+def write_to_anser(path_):
     """
     :brief: write data to answer.txt, data pattern {carID, startTime, path series}
     :param path_:
     :return:
     """
+
     pass
 
 
@@ -53,9 +55,16 @@ if __name__ == "__main__":
     al = build_adjacency_list(df, df1)
     print(al)
 
+    adw = build_ad_list_without_edge_id(df, df1)
+    print(adw)
+
     # 最短路径搜索
-    p = get_path(al, 1, 20)
+    p = get_path(adw, 1, 20)
     print('shortest path is:', p)
+
+    # 最短路径搜索
+    p1 = shortest_path(adw, 1, 20)
+    print(p1)
 
     # 可视化有向图
     adj_list_visualize(al)
