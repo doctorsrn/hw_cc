@@ -4,6 +4,7 @@ import numpy as np
 from util import *
 from dijkstra.dijkstra import shortest_path
 
+import time
 
 def read_from_txt(path_, type_= None):
     """
@@ -47,9 +48,9 @@ def write_answer2file(txt_path, answer_list):
 
 
 if __name__ == "__main__":
-    path = '/home/srn/SRn/Competition/HuaWei/hw_cc/SDK_python/CodeCraft-2019' + '/config/cross.txt'
-    path1 =  '/home/srn/SRn/Competition/HuaWei/hw_cc/SDK_python/CodeCraft-2019' + '/config/road.txt'
-    path2 = '/home/srn/SRn/Competition/HuaWei/hw_cc/SDK_python/CodeCraft-2019' + '/config/car.txt'
+    path = '/home/srn/SRn/Competition/HuaWei/hw_cc/SDK_python/CodeCraft-2019' + '/config_5/cross.txt'
+    path1 =  '/home/srn/SRn/Competition/HuaWei/hw_cc/SDK_python/CodeCraft-2019' + '/config_5/road.txt'
+    path2 = '/home/srn/SRn/Competition/HuaWei/hw_cc/SDK_python/CodeCraft-2019' + '/config_5/car.txt'
 
     df = read_from_txt(path)
     print(df.head())
@@ -79,12 +80,21 @@ if __name__ == "__main__":
     p1 = shortest_path(adw, 1, 20)
     print(p1)
 
+    start_time = time.clock()
     # get_all_cars_paths(adl_list, carIDL, startL, endL, use_networkx=True) test
-    pa = get_all_cars_paths(al, df2['id'], df2['from'], df2['to'])
+    pa = get_all_cars_paths(al, df2['id'], df2['from'], df2['to'], use_networkx=False)
+    end_time = time.clock()
     print('all cars paths：', pa)
+    print(len(pa))
+    print('CPU cost time: ', end_time-start_time)
+
+    # time cost result:  unit:second
+    # config_5: car number:512, networkx:0.01287 , 3rdparty: 0.102
+    # config_9: car number:2048, networkx:0.06 , 3rdparty: 0.4143
+    # config_10: car number:2048, networkx:0.06 , 3rdparty: 0.396
 
     # 可视化有向图
-    adj_list_visualize(al)
+    # adj_list_visualize(al)
 
 
 
