@@ -1,4 +1,4 @@
-#Version:0.0
+#Version:0.1
 
 import os
 import sys
@@ -142,7 +142,7 @@ def depart():
     #每一个车辆为一个列表  {车ID，已过路口，当前道路ID，当前车速，当前位置，前车ID}
     for key in sorted(waitstatus_now):
         if answermap[key][0]!=timeslice:continue
-        print(key)
+##        print(key)
         crossname=carmap[key][0]    
         roadname=str(answermap[key][1])
 
@@ -158,17 +158,15 @@ def depart():
                     postion=speed
                     precarid=str(-1);
                     carinfo=[key,crossname,roadname,speed,postion,precarid]
-                    print(carinfo)
-##                    print(roadmat)
-##                    print(" ")
+##                    print(carinfo)
                     q.appendleft(carinfo)
-                    print(roadmat)
+##                    print(roadmat)
                     waitstatus_now.pop(key)
                     movestatus_now[key]=-2  #将上路车辆标为终止状态
                     carstatus_now[key]=1
-                    print(waitstatus_now)
-                    print(movestatus_now)
-                    print(carstatus_now)
+##                    print(waitstatus_now)
+##                    print(movestatus_now)
+##                    print(carstatus_now)
                     break
                     
                 else:      #前面车道上有车
@@ -178,18 +176,16 @@ def depart():
                         speed=min(roadmap[roadname][1],carmap[key][1],carmap[precarid][1])  #当前车速为自身车速、道路限速最小值
                         postion=min(speed,precarpos-1)
                         carinfo=[key,crossname,roadname,speed,postion,precarid]
-                        print(carinfo)
+##                        print(carinfo)
                         q.appendleft([precarid,precross,precarroad,precarspeed,precarpos,precarpreid])
-##                        print(roadmat)
-##                        print(" ")
                         q.appendleft(carinfo)
-                        print(roadmat)
+##                        print(roadmat)
                         waitstatus_now.pop(key)
                         movestatus_now[key]=-2  #将上路车辆标为终止状态
                         carstatus_now[key]=1
-                        print(waitstatus_now)
-                        print(movestatus_now)
-                        print(carstatus_now)
+##                        print(waitstatus_now)
+##                        print(movestatus_now)
+##                        print(carstatus_now)
                         break
                                                         
 
@@ -204,17 +200,15 @@ def depart():
                     postion=speed
                     precarid=str(-1);
                     carinfo=[key,crossname,roadname,speed,postion,precarid]
-                    print(carinfo)
-##                    print(roadmat)
-##                    print(" ")
+##                    print(carinfo)
                     q.appendleft(carinfo)
-                    print(roadmat)
+##                    print(roadmat)
                     waitstatus_now.pop(key)
                     movestatus_now[key]=-2  #将上路车辆标为终止状态
                     carstatus_now[key]=1
-                    print(waitstatus_now)
-                    print(movestatus_now)
-                    print(carstatus_now)
+##                    print(waitstatus_now)
+##                    print(movestatus_now)
+##                    print(carstatus_now)
                     break
                     
                 else:      #前面车道上有车
@@ -224,18 +218,16 @@ def depart():
                         speed=min(roadmap[roadname][1],carmap[key][1],carmap[precarid][1])  #当前车速为自身车速、道路限速最小值
                         postion=min(speed,precarpos-1)
                         carinfo=[key,crossname,roadname,speed,postion,precarid]
-                        print(carinfo)
+##                        print(carinfo)
                         q.appendleft([precarid,precross,precarroad,precarspeed,precarpos,precarpreid])
-##                        print(roadmat)
-##                        print(" ")
                         q.appendleft(carinfo)
-                        print(roadmat)
+##                        print(roadmat)
                         waitstatus_now.pop(key)
                         movestatus_now[key]=-2  #将上路车辆标为终止状态
                         carstatus_now[key]=1
-                        print(waitstatus_now)
-                        print(movestatus_now)
-                        print(carstatus_now)
+##                        print(waitstatus_now)
+##                        print(movestatus_now)
+##                        print(carstatus_now)
                         break
                 
     statusdisplay()     #发车完毕显示状态   
@@ -260,8 +252,7 @@ def carscan(cross_size):
                         else :                        
                             for m in range(carnum):
                                 index=carnum-m-1
-                                print(q[index])                           
-                                #[carid,cross_last,carroad,carspeed,carpos,precarid]=q.pop()
+##                                print(q[index])                           
                                 [carid,cross_last,carroad,carspeed,carpos,precarid]=q[index]    #从该车道最前方车辆开始遍历
                                 if carpos!=(roadlength-pos):continue
                                 if precarid=='-1':  #有无前车阻挡                                
@@ -375,8 +366,8 @@ def crossupdate(cross_size):
                                 else :
                                     pass
                         if findflag==1:break
-            print("cross:"+str(i+1))
-            print(tempdict)
+##            print("cross:"+str(i+1))
+##            print(tempdict)
             if tempdict=={}:
                 index=-1
                 break     #当前路口没有要出的车辆退出
@@ -403,8 +394,8 @@ def crossupdate(cross_size):
                                 if m<n:swap(order,m,n)
                                 else:pass                            
                         
-                print("order:")
-                print(order)
+##                print("order:")
+##                print(order)
 
                 if order[0]!=firstroad:    #如果最高优先级不是当前拥有调度权的道路，则失去调度权
                     index+=1
@@ -508,8 +499,7 @@ def roadupdate(cross_size):
                         else :                        
                             for m in range(carnum):
                                 index=carnum-m-1
-                                print(q[index])                           
-                                #[carid,cross_last,carroad,carspeed,carpos,precarid]=q.pop()
+##                                print(q[index])                           
                                 [carid,cross_last,carroad,carspeed,carpos,precarid]=q[index]    #从该车道最前方车辆开始遍历
                                 if carpos!=(roadlength-pos):continue   #不是当前检查位置换车道
                                 if carstatus_now[carid]==1:
@@ -578,7 +568,10 @@ def main():
         carscan(cross_size)
 
         updateflag=0     #临时标志 0 路口、道路内未更新完  1更新结束
-        while updateflag!=1:            
+        while updateflag!=1:
+            if waitstatus_now=={} and movestatus_now=={} and timeslice!=0:
+                scheduleover=1       #待发车和已上路集合都为空时，调度结束
+                break
             for key in sorted(carstatus_now):
                 if carstatus_now[key]==0:
                     if  movestatus_now=={}:
@@ -598,18 +591,17 @@ def main():
                 
         depart()            
 
-        if waitstatus_now=={} and movestatus_now=={}:
-            scheduleover=1       #待发车和已上路集合都为空时，调度结束   
-        else:
-            statusdisplay()
-            timeslice+=1
-            statusupdate('carstatus_now')
-            statusupdate('movestatus_now')
+        statusdisplay()
+        timeslice+=1
+        statusupdate('carstatus_now')
+        statusupdate('movestatus_now')
             
 
     scheduletime=timeslice
-    print("scheduletime: "+str(scheduletime))
-
+    print("scheduletime: ")
+    print(scheduletime)
+    print("car movetime:")
+    print(movetime)
 
 if __name__=="__main__":
     main()
