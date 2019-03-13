@@ -1,7 +1,8 @@
 import pandas
 import numpy as np
-from util import build_adjacency_list, adj_list_visualize, get_path, build_ad_list_without_edge_id
-from dijkstra.dijkstra import shortest_path, dijkstra
+# from util import build_adjacency_list, adj_list_visualize, get_path, build_ad_list_without_edge_id
+from util import *
+from dijkstra.dijkstra import shortest_path
 
 
 def read_from_txt(path_, type_= None):
@@ -31,29 +32,41 @@ def read_from_txt(path_, type_= None):
     return df
 
 
-def write_to_anser(path_):
+def write_answer2file(txt_path, answer_list):
     """
     :brief: write data to answer.txt, data pattern {carID, startTime, path series}
-    :param path_:
+    :param txt_path: 要写入文件的路径
+    :param answer_list: answer 2维数组，数据格式例如:[[100, 1, 203, 303], [101, 3, 213, 303, 304, 432]]
     :return:
     """
-
-    pass
+    with open(txt_path, 'w') as  output:
+        output.write('#carID, StartTime, RoadID...\n')
+        for answer in answer_list:
+            answer_str = "".join([str(x)+',' for x in answer])  # 将int list型的answer转换为str类型，并以逗号隔开
+            output.writelines('(' + answer_str[:-1] + ')' + '\n')  # answer_str[:-1] 最后的逗号不写入
 
 
 if __name__ == "__main__":
     path = '/home/srn/SRn/Competition/HuaWei/hw_cc/SDK_python/CodeCraft-2019' + '/config/cross.txt'
     path1 =  '/home/srn/SRn/Competition/HuaWei/hw_cc/SDK_python/CodeCraft-2019' + '/config/road.txt'
-    df = read_from_txt(path)
+    path2 = '/home/srn/SRn/Competition/HuaWei/hw_cc/SDK_python/CodeCraft-2019' + '/config/car.txt'
 
+    df = read_from_txt(path)
     print(df.head())
     print(df.shape)
 
     df1 = read_from_txt(path1)
     print(df1.head())
     print(df1.shape)
+
+    df2 = read_from_txt(path2)
+    print(df2.head())
+    print(df2.shape)
+
     al = build_adjacency_list(df, df1)
     print(al)
+
+    print(convert_adl2adl_w(al))
 
     adw = build_ad_list_without_edge_id(df, df1)
     print(adw)
@@ -65,6 +78,10 @@ if __name__ == "__main__":
     # 最短路径搜索
     p1 = shortest_path(adw, 1, 20)
     print(p1)
+
+    # get_all_cars_paths(adl_list, carIDL, startL, endL, use_networkx=True) test
+    pa = get_all_cars_paths(al, df2['id'], df2['from'], df2['to'])
+    print('all cars paths：', pa)
 
     # 可视化有向图
     adj_list_visualize(al)

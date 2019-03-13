@@ -1,4 +1,5 @@
-from pqdict import PQDict
+# from pqdict import PQDict
+from dijkstra.pqdict import PQDict
 
 
 def dijkstra(G, start, end=None):
