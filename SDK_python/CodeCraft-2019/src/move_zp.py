@@ -47,7 +47,7 @@ scheduleover=0     #调度结束标志，0 未结束 1结束
 #时间定义
 timeslice=0  #时间变量
 scheduletime=0   #调度时间
-movetime=0   #行驶时间
+movetime={}   #行驶时间
 excutetime=0   #程序运行时间   
 
 
@@ -110,8 +110,12 @@ def addcartolist():
 
 def statusdisplay():
     #显示当前信息
+    print("timeslice:")
+    print(timeslice)
     print("roadmat:")
     print(roadmat)
+    print("answer:")
+    print(answermap)
     print("waitstatus:")
     print(waitstatus_now)
     print("movestatus:")
@@ -234,9 +238,7 @@ def depart():
                         print(carstatus_now)
                         break
                 
-    statusdisplay()        
-    statusupdate('carstatus_now')
-    statusupdate('movestatus_now')
+    statusdisplay()     #发车完毕显示状态   
         
 
 
@@ -249,47 +251,50 @@ def carscan(cross_size):
                 roadname=list(roadmat[i][j].keys())[0]
                 roadlength=roadmap[roadname][0]
                 channelnum=len(roadmat[i][j][roadname])
-                for k in range(channelnum):
-                    q=roadmat[i][j][roadname][k]
-                    carnum=len(q)
-                    if carnum==0:   #当前车道无车
-                        continue
-                    else :                        
-                        for m in range(carnum):
-                            index=carnum-m-1
-                            print(q[index])                           
-                            #[carid,cross_last,carroad,carspeed,carpos,precarid]=q.pop()
-                            [carid,cross_last,carroad,carspeed,carpos,precarid]=q[index]    #从该车道最前方车辆开始遍历
-                            if precarid=='-1':  #有无前车阻挡                                
-                                if carpos+carspeed>roadlength:      #是否出路口                            
-                                    movestatus_now[carid]=-1
-                                    carstatus_now[carid]=1
-                                else:
-                                    carpos+=carspeed
-                                    q[index][4]=carpos
-                                    carstatus_now[carid]=1
-##                                    carinfo=[carid,cross_last,carroad,carspeed,carpos,precarid]
-##                                    print(carinfo)
-##                                    q.append(carinfo)
-                            else:
-                                [precarid,precross_last,precarroad,precarspeed,precarpos,preprecarid]=q[index+1]
-                                if movestatus_now[precarid]== -1 and carstatus_now[precarid]==1:        #前车是否为等待状态
-                                    movestatus_now[carid]=-1
-                                    carstatus_now[carid]=1
-                                else:
-                                    carspeed=min(carspeed,precarpos-carpos)
-                                    carpos+=carspeed
-                                    q[index][4]=carpos
-                                    carstatus_now[carid]=1
+                for pos in range(roadlength):
+                    for k in range(channelnum):
+                        q=roadmat[i][j][roadname][k]
+                        carnum=len(q)
+                        if carnum==0:   #当前车道无车
+                            continue
+                        else :                        
+                            for m in range(carnum):
+                                index=carnum-m-1
+                                print(q[index])                           
+                                #[carid,cross_last,carroad,carspeed,carpos,precarid]=q.pop()
+                                [carid,cross_last,carroad,carspeed,carpos,precarid]=q[index]    #从该车道最前方车辆开始遍历
+                                if carpos!=(roadlength-pos):continue
+                                if precarid=='-1':  #有无前车阻挡                                
+                                    if carpos+carspeed>roadlength:      #是否出路口
+                                        movestatus_now[carid]=-1
 
-    statusdisplay()                                
-    statusupdate('carstatus_now')                        
+                                    else:
+                                        carpos+=carspeed
+                                        q[index][4]=carpos
+                                        movestatus_now[carid]=-2
+                                        carstatus_now[carid]=1
+
+                                else:
+                                    [precarid,precross_last,precarroad,precarspeed,precarpos,preprecarid]=q[index+1]
+                                    if movestatus_now[precarid]== -1:        #前车是否为等待状态
+                                        movestatus_now[carid]=-1
+
+                                    else:
+                                        carspeed=min(carspeed,precarpos-carpos)
+                                        carpos+=carspeed
+                                        q[index][4]=carpos
+                                        movestatus_now[carid]=-2
+                                        carstatus_now[carid]=1
+
+    statusdisplay()      #标记完毕显示状态                                                
             
 def turndir(carid,carroad_now,cross_now):
     #拐弯方向判定
     #直行 1 左拐 2 右拐 3
     #carid 车辆ID carroad_now 所在道路 cross_now 所要通过路口
     plan=answermap[carid]
+    if len(plan)==2:    #路线列表长度为2且要通过路口时即到达目的地
+        return [1,'-1']
     road_next=-1
     for i in range(len(plan)):
         if plan[i]==-1 or plan[i]==1:continue
@@ -344,21 +349,32 @@ def crossupdate(cross_size):
                     roadname=list(roadmat[row][i].keys())[0]
                     channelnum=len(roadmat[row][i][roadname])
                     roadlength=roadmap[roadname][0]
-                    for k in range(channelnum):                
-                        q=roadmat[row][i][roadname][k]     #检查该道路上优先权最高的车辆
-                        if len(q)==0:continue   #当前车道上无车
-                        else:
-                            carnum=len(q)
-                            [carid,cross_last,carroad,carspeed,carpos,precarid]=q[carnum-1]
-                            if movestatus_now[carid]==-1:
-                                if (carpos+carspeed)>roadlength:
-                                    [dirflag,nextroad]=turndir(carid,carroad,crossname)
-                                    tempdict[roadname]=[carid,row,i,crossname,roadname,k,dirflag,nextroad]       #[车辆ID，当前路口x,当前路口y，上个路口，上一道路，所在车道，车辆转弯状态，下一条道路]
-                                    break
-                                else:
+                    for pos in range(roadlength):
+                        findflag=0
+                        for k in range(channelnum):
+                            q=roadmat[row][i][roadname][k]     #检查该道路上优先权最高的车辆
+                            if len(q)==0:continue   #当前车道上无车
+                            else:
+                                carnum=len(q)
+                                [carid,cross_last,carroad,carspeed,carpos,precarid]=q[carnum-1]
+                                if carpos!=(roadlength-pos):continue   #不是当前检查位置换车道
+                                if movestatus_now[carid]==-1:
+                                    if (carpos+carspeed)>roadlength:
+                                        [dirflag,nextroad]=turndir(carid,carroad,crossname)
+                                        if nextroad=='-1':    #已到达目的地
+                                            q.pop()
+                                            movestatus_now.pop(carid)
+                                            carstatus_now.pop(carid)
+                                            movetime[carid]=timeslice-answermap[carid][0]+1
+                                        else:
+                                            tempdict[roadname]=[carid,row,i,crossname,roadname,k,dirflag,nextroad]       #[车辆ID，当前路口x,当前路口y，所在路口，所在道路，所在车道，车辆转弯状态，下一条道路]
+                                            findflag=1
+                                            break
+                                    else:
+                                        pass
+                                else :
                                     pass
-                            else :
-                                pass
+                        if findflag==1:break
             print("cross:"+str(i+1))
             print(tempdict)
             if tempdict=={}:
@@ -413,15 +429,19 @@ def crossupdate(cross_size):
                             [precarid,precross_last,precarroad,precarspeed,precarpos,preprecarid]=q_last.pop()
                             s_left=precarspeed+precarpos-roadmap[precarroad][0]    #前段道路剩余理论待行驶距离
                             speed_next=min(carmap[precarid][2],roadmap[nextroad][1])
-                            if s_left<speed_next:
+                            if s_left<=speed_next:
                                 q.appendleft([precarid,crossname,nextroad,speed_next,s_left,'-1'])
                                 carnum_last=len(q_last)
-                                q_last[carnum_last-1][-1]='-1'
+                                if carnum_last!=0:
+                                    q_last[carnum_last-1][-1]='-1'
+                                answermap[precarid].remove(int(precarroad))
                                 movestatus_now[precarid]=-2
                                 carstatus_now[precarid]=1
                                 break
                             else :
                                 q_last.append([precarid,precross_last,precarroad,precarspeed,roadlength_last,preprecarid])
+                                movestatus_now[precarid]=-2
+                                carstatus_now[precarid]=1
                                 break
                         elif  carnum==roadlength_next:     #该车道满换一车道
                             continue
@@ -430,23 +450,35 @@ def crossupdate(cross_size):
                             [precarid,precross_last,precarroad,precarspeed,precarpos,preprecarid]=q_last.pop()
                             s_left=precarspeed+precarpos-roadmap[precarroad][0]    #前段道路剩余理论待行驶距离
                             speed_next=min(carmap[precarid][2],roadlength_next)
-                            if s_left<speed_next:     #是否超过下条道路最大行驶距离
+                            if s_left<=speed_next:     #是否超过下条道路最大行驶距离
                                 if s_left<nextcarpos:    #是否超过前车
                                     q.appendleft([precarid,crossname,nextroad,speed_next,s_left,nextcarid])
                                     carnum_last=len(q_last)
-                                    q_last[carnum_last-1][-1]='-1'
+                                    if carnum_last!=0:
+                                        q_last[carnum_last-1][-1]='-1'
+                                    answermap[precarid].remove(int(precarroad))
                                     movestatus_now[precarid]=-2
                                     carstatus_now[precarid]=1
                                     break
                                 else:
-                                    q.appendleft([precarid,crossname,nextroad,speed_next,nextcarpos-1,nextcarid])
-                                    carnum_last=len(q_last)
-                                    q_last[carnum_last-1][-1]='-1'
-                                    movestatus_now[precarid]=-2
-                                    carstatus_now[precarid]=1
-                                    break
+                                    if nextcarpos!=1:            #考虑前车是否在道路最后排
+                                        q.appendleft([precarid,crossname,nextroad,speed_next,nextcarpos-1,nextcarid])
+                                        carnum_last=len(q_last)
+                                        if carnum_last!=0:
+                                            q_last[carnum_last-1][-1]='-1'
+                                        answermap[precarid].remove(int(precarroad))
+                                        movestatus_now[precarid]=-2
+                                        carstatus_now[precarid]=1
+                                        break
+                                    else:
+                                        q_last.append([precarid,precross_last,precarroad,precarspeed,roadlength_last,preprecarid])
+                                        movestatus_now[precarid]=-2
+                                        carstatus_now[precarid]=1
+                                        break 
                             else:
                                 q_last.append([precarid,precross_last,precarroad,precarspeed,roadlength_last,preprecarid])
+                                movestatus_now[precarid]=-2
+                                carstatus_now[precarid]=1
                                 break                
             else:
                 index+=1
@@ -458,9 +490,51 @@ def crossupdate(cross_size):
 
     statusdisplay()   #路口更新结束显示状态     
 
-def roadupdate():
+def roadupdate(cross_size):
     #道路内部更新
-    pass
+    for i in range(cross_size):
+        for j in range(cross_size):
+            if roadmat[i][j]=={} :continue
+            else:
+                roadname=list(roadmat[i][j].keys())[0]
+                roadlength=roadmap[roadname][0]
+                channelnum=len(roadmat[i][j][roadname])
+                for pos in range(roadlength):
+                    for k in range(channelnum):
+                        q=roadmat[i][j][roadname][k]
+                        carnum=len(q)
+                        if carnum==0:   #当前车道无车
+                            continue
+                        else :                        
+                            for m in range(carnum):
+                                index=carnum-m-1
+                                print(q[index])                           
+                                #[carid,cross_last,carroad,carspeed,carpos,precarid]=q.pop()
+                                [carid,cross_last,carroad,carspeed,carpos,precarid]=q[index]    #从该车道最前方车辆开始遍历
+                                if carpos!=(roadlength-pos):continue   #不是当前检查位置换车道
+                                if carstatus_now[carid]==1:
+                                    continue
+                                else:
+                                    if precarid=='-1':  #有无前车阻挡                                
+                                        if carpos+carspeed>roadlength:      #是否出路口
+                                            pass
+                                        else:
+                                            carpos+=carspeed
+                                            q[index][4]=carpos
+                                            movestatus_now[carid]=-2
+                                            carstatus_now[carid]=1
+                                    else:
+                                        [precarid,precross_last,precarroad,precarspeed,precarpos,preprecarid]=q[index+1]
+                                        if movestatus_now[precarid]== -1:        #前车是否为等待状态
+                                            pass
+                                        else:
+                                            carspeed=min(carspeed,precarpos-carpos)
+                                            carpos+=carspeed
+                                            q[index][4]=carpos
+                                            movestatus_now[carid]=-2
+                                            carstatus_now[carid]=1
+
+    statusdisplay()         #道路内部更新结束显示状态                       
 
     
     
@@ -498,25 +572,40 @@ def main():
     #[dir,next]=turndir('1001','509','12')
 
     global timeslice
+    global scheduleover
     while scheduleover!=1:
-        
-        depart()
+                
         carscan(cross_size)
 
-        updateflag=0     #临时标志 0 路口、道路内未更新完 1更新结束
-        while updateflag!=1:
-            crossupdate(cross_size)
-            roadupdate()
-            updateflag=1
-##            for key in sorted(carstatus_now):
-##                if carstatus_now[key]==0:
-##                    updateflag=0
-##                    break
+        updateflag=0     #临时标志 0 路口、道路内未更新完  1更新结束
+        while updateflag!=1:            
+            for key in sorted(carstatus_now):
+                if carstatus_now[key]==0:
+                    if  movestatus_now=={}:
+                        updateflag=1
+                        break
+                    elif movestatus_now[key]==-2:
+                        updateflag=1
+                    else:
+                        updateflag=0
+                        break
+                else:
+                    updateflag=1
 
+            if updateflag==0:
+                crossupdate(cross_size)
+                roadupdate(cross_size)
+                
+        depart()            
 
-        if waitstatus_now=={} and movestatus_now=={}:break     #待发车和已上路集合都为空时，调度结束
+        if waitstatus_now=={} and movestatus_now=={}:
+            scheduleover=1       #待发车和已上路集合都为空时，调度结束   
         else:
+            statusdisplay()
             timeslice+=1
+            statusupdate('carstatus_now')
+            statusupdate('movestatus_now')
+            
 
     scheduletime=timeslice
     print("scheduletime: "+str(scheduletime))
