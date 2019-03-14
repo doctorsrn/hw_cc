@@ -16,7 +16,7 @@ os.chdir(workpath)          #指定py文件执行路径为当前工作路径
 ######数据结构定义######
 
 #文件名
-dirname=r'./config_0/'
+dirname=r'../config_0/'
 carfile=dirname+r'car.txt'
 crossfile=dirname+r'cross.txt'
 roadfile=dirname+r'road.txt'
@@ -144,7 +144,7 @@ def depart():
     #发车
     #每一个车辆为一个列表  {车ID，已过路口，当前道路ID，当前车速，当前位置，前车ID}
     for key in sorted(waitstatus_now):
-        if answermap[key][0]!=timeslice:continue
+        if answermap[key][0]>timeslice:continue   #大于当前出发时间的不考虑
 ##        print(key)
         crossname=carmap[key][0]    
         roadname=str(answermap[key][1])
@@ -540,32 +540,12 @@ def dictcmp(dict1,dict2):    #字典比较，相等为1 不等为0
             return 0
     return 1
     
+def CalScheduleTime(answerfile,crossmap,roadmap,carmap,cross_size,road_size,car_size,roadmat):
     
-
-def main():
-    readdata(carfile,carmap)
-#    print(carmap)
-    readdata(roadfile,roadmap)
-##    print(roadmap)
-    readdata(crossfile,crossmap)
-#    print(crossmap)
-
-#######路径规划######
-
-
-######调度######
-
-    begintime=time.time()
-
-    car_size=len(carmap)
-    cross_size=len(crossmap)
-    road_size=len(roadmap)
+    begintime=time.time()    
     
     readdata(answerfile,answermap)
 ##    print(answermap)
-    
-    #路网定义
-    createnvir(cross_size)
     
     #将所有车放入等待上路集合中
     addcartolist()
@@ -645,7 +625,27 @@ def main():
     print("car movetime:")
     print(movetime)
 
+def main():
     
+    readdata(carfile,carmap)
+    readdata(roadfile,roadmap)
+    readdata(crossfile,crossmap)
+    car_size=len(carmap)
+    cross_size=len(crossmap)
+    road_size=len(roadmap)
+
+    #路网定义
+    createnvir(cross_size)
+
+    
+#######路径规划######
+
+
+######调度######
+
+    CalScheduleTime(answerfile,crossmap,roadmap,carmap,cross_size,road_size,car_size,roadmat)   #参数：answer.txt路径、路口字典、道路字典、车辆字典、路口数目、道路数目、车辆数目、路网
+
+
 
 if __name__=="__main__":
     profile.run('main()')
