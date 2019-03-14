@@ -28,7 +28,7 @@ carmap={}
 crossmap={}
 roadmap={}
 answermap={}
-
+crossidmap={}  #存放路口id 与0,1,2,3..的对应关系
 
 #处理后的数据形式
 car_size=len(carmap)
@@ -71,9 +71,21 @@ def readdata(filename,mapname):
                linelist=line.split(')')[0].split('(')[-1].split(',')
                linelist=[int(i) for i in linelist]  
 ##               print(linelist)
-               mapname[str(linelist[0])]=linelist[1:]
+               mapname[linelist[0]]=linelist[1:]
 ##               print(mapname)
 ##               input()
+##        print(filename)
+        if filename.split('/')[-1].split('.')[0]=='cross':
+            temp=0
+            for key in sorted(mapname):
+                mapname[key].append(temp)   #为crossmap增加一列顺序号
+                temp+=1
+                
+def crossidtransfer(crossmap,crossidmap):
+    for key in crossmap:
+        newkey=crossmap[key][-1]
+##        print(newkey)
+        crossidmap[newkey]=key
 
 
 def createnvir(cross_size):
@@ -85,9 +97,10 @@ def createnvir(cross_size):
         roadmat.append(temp)    
 ##    print(roadmat)
     for key in sorted(roadmap):
+##        print(key)
         channelnum=roadmap[key][2]
-        row=roadmap[key][3]-1
-        col=roadmap[key][4]-1     
+        row=crossmap[roadmap[key][3]][-1]
+        col=crossmap[roadmap[key][4]][-1]     
         if roadmap[key][5]==1:              #单双向判断
             temp=[]
             for j in range(channelnum):
@@ -147,15 +160,15 @@ def depart():
         if answermap[key][0]>timeslice:continue   #大于当前出发时间的不考虑
 ##        print(key)
         crossname=carmap[key][0]    
-        roadname=str(answermap[key][1])
+        roadname=answermap[key][1]
 
-        row=roadmap[roadname][3]-1
-        col=roadmap[roadname][4]-1
+        row=crossmap[roadmap[roadname][3]][-1]
+        col=crossmap[roadmap[roadname][4]][-1]
 
-        if (row+1)==crossname:     #出发路口为road.txt起始点ID
+        if row==crossmap[crossname][-1]:     #出发路口为road.txt起始点ID
             channelnum=len(roadmat[row][col][roadname])
-            for i in range(channelnum):
-                q=roadmat[row][col][roadname][i]
+            for channelorder in range(channelnum):
+                q=roadmat[row][col][roadname][channelorder]
                 if len(q)==0:   #前面车道上无车
                     speed=min(roadmap[roadname][1],carmap[key][1])  #当前车速为自身车速、道路限速最小值
                     postion=speed
@@ -193,11 +206,11 @@ def depart():
                                                         
 
         else:         #出发路口为road.txt终点ID
-            row=roadmap[roadname][4]-1
-            col=roadmap[roadname][3]-1            
+            row=crossmap[roadmap[roadname][4]][-1]
+            col=crossmap[roadmap[roadname][3]][-1]           
             channelnum=len(roadmat[row][col][roadname])
-            for i in range(channelnum):
-                q=roadmat[row][col][roadname][i]
+            for channelorder in range(channelnum):
+                q=roadmat[row][col][roadname][channelorder]
                 if len(q)==0:   #前面车道上无车
                     speed=min(roadmap[roadname][1],carmap[key][1])  #当前车速为自身车速、道路限速最小值
                     postion=speed
@@ -239,16 +252,16 @@ def depart():
 
 def carscan(cross_size):
     #车辆遍历，标记 等待 或终止
-    for i in range(cross_size):
-        for j in range(cross_size):
-            if roadmat[i][j]=={} :continue
+    for row in range(cross_size):
+        for col in range(cross_size):
+            if roadmat[row][col]=={} :continue
             else:
-                roadname=list(roadmat[i][j].keys())[0]
+                roadname=list(roadmat[row][col].keys())[0]
                 roadlength=roadmap[roadname][0]
-                channelnum=len(roadmat[i][j][roadname])
+                channelnum=len(roadmat[row][col][roadname])
                 for pos in range(roadlength):
                     for k in range(channelnum):
-                        q=roadmat[i][j][roadname][k]
+                        q=roadmat[row][col][roadname][k]
                         carnum=len(q)
                         if carnum==0:   #当前车道无车
                             continue
@@ -291,15 +304,15 @@ def turndir(carid,carroad_now,cross_now):
         return [1,'-1']
     road_next=-1
     for i in range(len(plan)):
-        if plan[i]==-1 or plan[i]==1:continue
+        if plan[i]==1:continue
         else :
-            road_next=str(plan[i+1])
+            road_next=plan[i+1]
             break
     crossinfo=crossmap[cross_now]
     lastindex=-1
     nextindex=-1
     for i in range(len(crossinfo)):
-        road=str(crossinfo[i])
+        road=crossinfo[i]
         if road==carroad_now:
             lastindex=i
         elif road==road_next:
@@ -325,9 +338,9 @@ def swap(ll,index1,index2):
 
 def crossupdate(cross_size):
     #路口更新
-    for i in range(cross_size):
+    for col in range(cross_size):
         #首先将要通过该路口的所有车辆信息存入
-        crossname=str(i+1)
+        crossname=crossidmap[col]
         crossroad=crossmap[crossname]
         if -1 in crossroad:
             crossroad.remove(-1)   #去除-1
@@ -335,19 +348,19 @@ def crossupdate(cross_size):
         crossroadnum=len(crossroad)
         index=0
         while index!=-1:
-            firstroad=str(crossroad[index])
+            firstroad=crossroad[index]
                   
             tempdict={} #存放各道路优先权最高的车辆
             for row in range(cross_size):
-                if roadmat[row][i]=={} :continue
+                if roadmat[row][col]=={} :continue
                 else:                
-                    roadname=list(roadmat[row][i].keys())[0]
-                    channelnum=len(roadmat[row][i][roadname])
+                    roadname=list(roadmat[row][col].keys())[0]
+                    channelnum=len(roadmat[row][col][roadname])
                     roadlength=roadmap[roadname][0]
                     for pos in range(roadlength):
                         findflag=0
-                        for k in range(channelnum):
-                            q=roadmat[row][i][roadname][k]     #检查该道路上优先权最高的车辆
+                        for channelorder in range(channelnum):
+                            q=roadmat[row][col][roadname][channelorder]     #检查该道路上优先权最高的车辆
                             carnum=len(q)
                             if carnum==0:continue   #当前车道上无车
                             else:
@@ -362,7 +375,7 @@ def crossupdate(cross_size):
                                             carstatus_now.pop(carid)
                                             movetime[carid]=timeslice-answermap[carid][0]+1
                                         else:
-                                            tempdict[roadname]=[carid,row,i,crossname,roadname,k,dirflag,nextroad]       #[车辆ID，当前路口x,当前路口y，所在路口，所在道路，所在车道，车辆转弯状态，下一条道路]
+                                            tempdict[roadname]=[carid,row,col,crossname,roadname,channelorder,dirflag,nextroad]       #[车辆ID，当前路口x,当前路口y，所在路口，所在道路，所在车道，车辆转弯状态，下一条道路]
                                             findflag=1
                                             break
                                     else:
@@ -370,7 +383,8 @@ def crossupdate(cross_size):
                                 else :
                                     pass
                         if findflag==1:break
-##            print("cross:"+str(i+1))
+##            print("cross:")
+##            print(crossname)
 ##            print(tempdict)
             if tempdict=={}:
                 index=-1
@@ -407,9 +421,9 @@ def crossupdate(cross_size):
                 else:                
                     [carid,roadmatx,roadmaty,crossname,roadname,carchannel,dirflag,nextroad]=tempdict[firstroad]
                     q_last=roadmat[roadmatx][roadmaty][roadname][carchannel]    #要过路口的车道队列
-                    row=roadmap[nextroad][3]-1
-                    col=roadmap[nextroad][4]-1
-                    if str(row+1)==crossname:
+                    row=crossmap[roadmap[nextroad][3]][-1]
+                    col=crossmap[roadmap[nextroad][4]][-1]
+                    if crossidmap[row]==crossname:
                         roadmatx_next=row
                         roadmaty_next=col
                     else:
@@ -418,8 +432,8 @@ def crossupdate(cross_size):
                     channelnum=len(roadmat[roadmatx_next][roadmaty_next][nextroad])
                     roadlength_last=roadmap[roadname][0]
                     roadlength_next=roadmap[nextroad][0]
-                    for k in range(channelnum):
-                        q=roadmat[roadmatx_next][roadmaty_next][nextroad][k]
+                    for channelorder in range(channelnum):
+                        q=roadmat[roadmatx_next][roadmaty_next][nextroad][channelorder]
                         carnum=len(q)
                         if carnum==0:   #当前车道无车
                             [precarid,precross_last,precarroad,precarspeed,precarpos,preprecarid]=q_last.pop()
@@ -430,7 +444,7 @@ def crossupdate(cross_size):
                                 carnum_last=len(q_last)
                                 if carnum_last!=0:
                                     q_last[carnum_last-1][-1]='-1'
-                                answermap[precarid].remove(int(precarroad))
+                                answermap[precarid].remove(precarroad)
                                 movestatus_now[precarid]=-2
                                 carstatus_now[precarid]=1
                                 break
@@ -452,7 +466,7 @@ def crossupdate(cross_size):
                                     carnum_last=len(q_last)
                                     if carnum_last!=0:
                                         q_last[carnum_last-1][-1]='-1'
-                                    answermap[precarid].remove(int(precarroad))
+                                    answermap[precarid].remove(precarroad)
                                     movestatus_now[precarid]=-2
                                     carstatus_now[precarid]=1
                                     break
@@ -462,7 +476,7 @@ def crossupdate(cross_size):
                                         carnum_last=len(q_last)
                                         if carnum_last!=0:
                                             q_last[carnum_last-1][-1]='-1'
-                                        answermap[precarid].remove(int(precarroad))
+                                        answermap[precarid].remove(precarroad)
                                         movestatus_now[precarid]=-2
                                         carstatus_now[precarid]=1
                                         break
@@ -487,16 +501,16 @@ def crossupdate(cross_size):
 
 def roadupdate(cross_size):
     #道路内部更新
-    for i in range(cross_size):
-        for j in range(cross_size):
-            if roadmat[i][j]=={} :continue
+    for row in range(cross_size):
+        for col in range(cross_size):
+            if roadmat[row][col]=={} :continue
             else:
-                roadname=list(roadmat[i][j].keys())[0]
+                roadname=list(roadmat[row][col].keys())[0]
                 roadlength=roadmap[roadname][0]
-                channelnum=len(roadmat[i][j][roadname])
+                channelnum=len(roadmat[row][col][roadname])
                 for pos in range(roadlength):
-                    for k in range(channelnum):
-                        q=roadmat[i][j][roadname][k]
+                    for channelorder in range(channelnum):
+                        q=roadmat[row][col][roadname][channelorder]
                         carnum=len(q)
                         if carnum==0:   #当前车道无车
                             continue
@@ -540,7 +554,7 @@ def dictcmp(dict1,dict2):    #字典比较，相等为1 不等为0
             return 0
     return 1
     
-def CalScheduleTime(answerfile,crossmap,roadmap,carmap,cross_size,road_size,car_size,roadmat):
+def CalScheduleTime(answerfile,crossmap,crossidmap,roadmap,carmap,cross_size,road_size,car_size,roadmat):
     
     begintime=time.time()    
     
@@ -630,8 +644,13 @@ def CalScheduleTime(answerfile,crossmap,roadmap,carmap,cross_size,road_size,car_
 def main():
     
     readdata(carfile,carmap)
+##    print(carmap)
     readdata(roadfile,roadmap)
+##    print(roadmap)
     readdata(crossfile,crossmap)
+##    print(crossmap)
+    crossidtransfer(crossmap,crossidmap)
+##    print(crossidmap)
     car_size=len(carmap)
     cross_size=len(crossmap)
     road_size=len(roadmap)
@@ -645,7 +664,8 @@ def main():
 
 ######调度######
 
-    CalScheduleTime(answerfile,crossmap,roadmap,carmap,cross_size,road_size,car_size,roadmat)   #参数：answer.txt路径、路口字典、道路字典、车辆字典、路口数目、道路数目、车辆数目、路网
+    #参数：answer.txt路径、路口字典、路口id对应关系字典、道路字典、车辆字典、路口数目、道路数目、车辆数目、路网
+    CalScheduleTime(answerfile,crossmap,crossidmap,roadmap,carmap,cross_size,road_size,car_size,roadmat)   
 
 
 
