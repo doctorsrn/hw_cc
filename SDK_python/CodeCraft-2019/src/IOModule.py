@@ -4,6 +4,8 @@ import numpy as np
 from util import *
 from dijkstra.dijkstra import shortest_path
 
+# from move_zp import *
+
 import time
 
 def read_from_txt(path_, type_= None):
@@ -48,11 +50,11 @@ def write_answer2file(txt_path, answer_list):
 
 
 if __name__ == "__main__":
-    rpath = '/home/srn/SRn/Competition/HuaWei/hw_cc/SDK_python/CodeCraft-2019'
-    path = rpath + '/config/cross.txt'
-    path1 = rpath + '/config/road.txt'
-    path2 = rpath + '/config/car.txt'
-    path3 = rpath + '/config/answer.txt'
+    rpath = '/home/srn/SRn/Competition/HuaWei/hw_cc/SDK_python/CodeCraft-2019/config_9'
+    path = rpath + '/cross.txt'
+    path1 = rpath + '/road.txt'
+    path2 = rpath + '/car.txt'
+    path3 = rpath + '/answer.txt'
 
     df = read_from_txt(path)
     print(df.head())
@@ -83,13 +85,28 @@ if __name__ == "__main__":
     print(p1)
 
     start_time = time.clock()
-    # get_all_cars_paths(adl_list, carIDL, startL, endL, use_networkx=True) test
+
+    # test function: get_all_cars_paths(adl_list, carIDL, startL, endL, use_networkx=True)
     pa = get_all_cars_paths(al, df2['id'], df2['from'], df2['to'], use_networkx=False)
     end_time = time.clock()
     print('all cars paths：', pa)
     print(len(pa))
-    print('CPU cost time: ', end_time-start_time)
+    print('CPU cost time for path plan: ', end_time-start_time)
 
+    ###############################################
+    # # 读数据
+    # readdata(path2, carmap)
+    # readdata(path1, roadmap)
+    # readdata(path, crossmap)
+    # crossidtransfer(crossmap, crossidmap)
+    # car_size = len(carmap)
+    # cross_size = len(crossmap)
+    # road_size = len(roadmap)
+    #
+    # # 路网定义
+    # createnvir(cross_size)
+
+    #############################################################
     # time cost result:  unit:second
     # config_5: car number:512, networkx:0.01287 , 3rdparty: 0.102
     # config_9: car number:2048, networkx:0.06 , 3rdparty: 0.4143
@@ -99,7 +116,9 @@ if __name__ == "__main__":
     # adj_list_visualize(al)
 
     # test get_time_plan
+    start_time = time.clock()
     pt = get_time_plan1(df2)
+    print('CPU cost time for time plan: ', time.clock() - start_time)
     print(pt)
 
     answer = get_answer(df2['id'], pa, pt)
@@ -107,7 +126,10 @@ if __name__ == "__main__":
 
     write_answer2file(path3, answer)
 
-
+    # # 求调度时间
+    # value = CalScheduleTime(path3, crossmap, crossidmap, roadmap, carmap, cross_size, road_size, car_size,
+    #                         roadmat)  # 参数：answer.txt路径、路口字典、道路字典、车辆字典、路口数目、道路数目、车辆数目、路网
+    # print(value)
 
 
 

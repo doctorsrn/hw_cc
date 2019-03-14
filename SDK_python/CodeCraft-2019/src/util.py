@@ -274,6 +274,45 @@ def get_time_plan(time_plan_func, car_df, ):
 
 
 def get_time_plan1(car_df):
+    """
+    brief:简单粗暴的时间安排1
+    :param car_df:
+    :return:
+    """
+    time_plans = {}
+
+    # 根据每辆车的计划出发时间进行升序排列
+    car_df_sort = car_df.sort_values(by='planTime', axis=0, ascending=True)
+    car_len = len(car_df_sort['id'])
+
+    # some parameters
+    split_factor = 0.3
+    max_delay_time = 50
+
+    i = 1
+    for carID, pT in zip(car_df_sort['id'], car_df_sort['planTime']):
+        pT += i
+        i += 1
+        if i/car_len < split_factor:
+            pT = pT + int(i/(split_factor*car_len) * max_delay_time)
+            time_plans[carID] = [carID, pT]
+
+        if (i/car_len >= split_factor) and (i/car_len <= (1-split_factor)):
+            pT = pT + max_delay_time
+            time_plans[carID] = [carID, pT]
+        if i/car_len > (1-split_factor):
+            pT = pT + int(max_delay_time - i / (split_factor * car_len) * max_delay_time)
+            time_plans[carID] = [carID, pT]
+
+    return time_plans
+
+
+def get_time_plan2(car_df):
+    """
+    brief: 简单粗暴的时间安排2
+    :param car_df:
+    :return:
+    """
     time_plans = {}
 
     # 根据每辆车的计划出发时间进行升序排列
@@ -281,12 +320,12 @@ def get_time_plan1(car_df):
 
     i = 1
     for carID, pT in zip(car_df_sort['id'], car_df_sort['planTime']):
-        pT += i
         i += 1
+        pT += i
+
         time_plans[carID] = [carID, pT]
 
     return time_plans
-
 
 def get_answer(car_list, path_plan, time_plan):
     """
