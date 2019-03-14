@@ -1,9 +1,11 @@
-#Version:0.1
+#Version:0.11
 
 import os
 import sys
 import copy
 from collections import deque   #双端队列
+import profile
+import time
 
 #######windows下相对路径需要######
 workpath=os.path.dirname(sys.argv[0])
@@ -14,7 +16,7 @@ os.chdir(workpath)          #指定py文件执行路径为当前工作路径
 ######数据结构定义######
 
 #文件名
-dirname=r'./config_0/'
+dirname=r'../config_0/'
 carfile=dirname+r'car.txt'
 crossfile=dirname+r'cross.txt'
 roadfile=dirname+r'road.txt'
@@ -41,8 +43,9 @@ waitstatus_now={}   #当前时刻等待上路车辆
 movestatus_now={}   #当前时刻已上路车辆
 #-1表示当前时刻车辆状态未变化 1表示当前时刻车辆状态已更新
 carstatus_now={}
+carstatus_last={}  #上一时刻车辆状态
 scheduleover=0     #调度结束标志，0 未结束 1结束
-
+lockflag=0  #死锁标志 0 未发生死锁 1 发生死锁
 
 #时间定义
 timeslice=0  #时间变量
@@ -113,7 +116,7 @@ def statusdisplay():
     print("timeslice:")
     print(timeslice)
     print("roadmat:")
-    print(roadmat)
+##    print(roadmat)
     print("answer:")
     print(answermap)
     print("waitstatus:")
@@ -141,7 +144,7 @@ def depart():
     #发车
     #每一个车辆为一个列表  {车ID，已过路口，当前道路ID，当前车速，当前位置，前车ID}
     for key in sorted(waitstatus_now):
-        if answermap[key][0]!=timeslice:continue
+        if answermap[key][0]>timeslice:continue   #大于当前出发时间的不考虑
 ##        print(key)
         crossname=carmap[key][0]    
         roadname=str(answermap[key][1])
@@ -230,7 +233,7 @@ def depart():
 ##                        print(carstatus_now)
                         break
                 
-    statusdisplay()     #发车完毕显示状态   
+##    statusdisplay()     #发车完毕显示状态   
         
 
 
@@ -277,7 +280,7 @@ def carscan(cross_size):
                                         movestatus_now[carid]=-2
                                         carstatus_now[carid]=1
 
-    statusdisplay()      #标记完毕显示状态                                                
+##    statusdisplay()      #标记完毕显示状态                                                
             
 def turndir(carid,carroad_now,cross_now):
     #拐弯方向判定
@@ -329,6 +332,7 @@ def crossupdate(cross_size):
         if -1 in crossroad:
             crossroad.remove(-1)   #去除-1
         crossroad=sorted(crossroad)
+        crossroadnum=len(crossroad)
         index=0
         while index!=-1:
             firstroad=str(crossroad[index])
@@ -344,9 +348,9 @@ def crossupdate(cross_size):
                         findflag=0
                         for k in range(channelnum):
                             q=roadmat[row][i][roadname][k]     #检查该道路上优先权最高的车辆
-                            if len(q)==0:continue   #当前车道上无车
+                            carnum=len(q)
+                            if carnum==0:continue   #当前车道上无车
                             else:
-                                carnum=len(q)
                                 [carid,cross_last,carroad,carspeed,carpos,precarid]=q[carnum-1]
                                 if carpos!=(roadlength-pos):continue   #不是当前检查位置换车道
                                 if movestatus_now[carid]==-1:
@@ -380,9 +384,10 @@ def crossupdate(cross_size):
                     if tempdict[roadname][-1]!=goalroad:continue       #去除非同一目标道路
                     else:
                         order.append(roadname)
-                
-                for m in range(len(order)-1):   #冒泡排序确定优先级顺序
-                    for n in range(len(order)-m-1):
+
+                ordernum=len(order)
+                for m in range(ordernum-1):   #冒泡排序确定优先级顺序
+                    for n in range(ordernum-m-1):
                         if m==n :continue
                         else:
                             road1=order[m]
@@ -401,7 +406,7 @@ def crossupdate(cross_size):
                     index+=1
                 else:                
                     [carid,roadmatx,roadmaty,crossname,roadname,carchannel,dirflag,nextroad]=tempdict[firstroad]
-                    q_last=roadmat[roadmatx][roadmaty][roadname][carchannel]    #前一道路车道队列
+                    q_last=roadmat[roadmatx][roadmaty][roadname][carchannel]    #要过路口的车道队列
                     row=roadmap[nextroad][3]-1
                     col=roadmap[nextroad][4]-1
                     if str(row+1)==crossname:
@@ -474,12 +479,11 @@ def crossupdate(cross_size):
             else:
                 index+=1
             
-
-            statusdisplay()                              
-            if index==len(crossroad):index=0        #循环
+                             
+            if index==crossroadnum:index=0        #循环
         
 
-    statusdisplay()   #路口更新结束显示状态     
+##    statusdisplay()   #路口更新结束显示状态     
 
 def roadupdate(cross_size):
     #道路内部更新
@@ -524,32 +528,24 @@ def roadupdate(cross_size):
                                             movestatus_now[carid]=-2
                                             carstatus_now[carid]=1
 
-    statusdisplay()         #道路内部更新结束显示状态                       
+##    statusdisplay()         #道路内部更新结束显示状态                       
 
+def dictcmp(dict1,dict2):    #字典比较，相等为1 不等为0
+    for key in dict1:
+        if key not in dict2:
+            return 0
+        elif dict1[key]==dict2[key]:
+            continue
+        else:
+            return 0
+    return 1
     
+def CalScheduleTime(answerfile,crossmap,roadmap,carmap,cross_size,road_size,car_size,roadmat):
     
-
-def main():
-    readdata(carfile,carmap)
-#    print(carmap)
-    readdata(roadfile,roadmap)
-##    print(roadmap)
-    readdata(crossfile,crossmap)
-#    print(crossmap)
-
-#######路径规划######
-
-
-######调度######
-    car_size=len(carmap)
-    cross_size=len(crossmap)
-    road_size=len(roadmap)
+    begintime=time.time()    
     
     readdata(answerfile,answermap)
 ##    print(answermap)
-    
-    #路网定义
-    createnvir(cross_size)
     
     #将所有车放入等待上路集合中
     addcartolist()
@@ -563,32 +559,52 @@ def main():
 
     global timeslice
     global scheduleover
+    global carstatus_last
+    global lockflag
     while scheduleover!=1:
                 
         carscan(cross_size)
 
-        updateflag=0     #临时标志 0 路口、道路内未更新完  1更新结束
-        while updateflag!=1:
-            if waitstatus_now=={} and movestatus_now=={} and timeslice!=0:
-                scheduleover=1       #待发车和已上路集合都为空时，调度结束
-                break
-            for key in sorted(carstatus_now):
-                if carstatus_now[key]==0:
-                    if  movestatus_now=={}:
-                        updateflag=1
-                        break
-                    elif movestatus_now[key]==-2:
-                        updateflag=1
-                    else:
-                        updateflag=0
-                        break
-                else:
-                    updateflag=1
+        tempcopy=carstatus_now
+        carstatus_last=tempcopy.copy()
 
-            if updateflag==0:
-                crossupdate(cross_size)
-                roadupdate(cross_size)
-                
+        scanover=0
+        for key in carstatus_last:
+            if carstatus_last[key]==0:
+                scanover=1
+                break
+
+        if scanover==1:
+            updateflag=0     #临时标志 0 路口、道路内未更新完  1更新结束
+            while updateflag!=1:
+                if waitstatus_now=={} and movestatus_now=={} and timeslice!=0:
+                    scheduleover=1       #待发车和已上路集合都为空时，调度结束
+                    break
+                for key in sorted(carstatus_now):
+                    if carstatus_now[key]==0:
+                        if  movestatus_now=={}:
+                            updateflag=1
+                            break
+                        elif movestatus_now[key]==-2:
+                            updateflag=1
+                        else:
+                            updateflag=0
+                            break
+                    else:
+                        updateflag=1
+
+                if updateflag==0:
+                    crossupdate(cross_size)
+                    roadupdate(cross_size)
+
+
+            if dictcmp(carstatus_last,carstatus_now) and movestatus_now!={}:     #判断是否出现死锁
+                scheduleover=1
+                lockflag=1
+                break
+        else:
+            pass
+            
         depart()            
 
         statusdisplay()
@@ -596,12 +612,42 @@ def main():
         statusupdate('carstatus_now')
         statusupdate('movestatus_now')
             
-
-    scheduletime=timeslice
+    endtime=time.time()
+    excutetime=endtime-begintime
+    print("excutetime: ")
+    print(excutetime)
+    if not lockflag:
+        scheduletime=timeslice
+    else:
+        scheduletime=-1
     print("scheduletime: ")
     print(scheduletime)
     print("car movetime:")
     print(movetime)
+    
+    return scheduletime
+
+def main():
+    
+    readdata(carfile,carmap)
+    readdata(roadfile,roadmap)
+    readdata(crossfile,crossmap)
+    car_size=len(carmap)
+    cross_size=len(crossmap)
+    road_size=len(roadmap)
+
+    #路网定义
+    createnvir(cross_size)
+
+    
+#######路径规划######
+
+
+######调度######
+
+    CalScheduleTime(answerfile,crossmap,roadmap,carmap,cross_size,road_size,car_size,roadmat)   #参数：answer.txt路径、路口字典、道路字典、车辆字典、路口数目、道路数目、车辆数目、路网
+
+
 
 if __name__=="__main__":
-    main()
+    profile.run('main()')
