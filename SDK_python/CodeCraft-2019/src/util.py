@@ -264,13 +264,28 @@ def get_path_dijkstra(adl_list_w, start, end):
     return path
 
 
-def start_time_plan(car_df):
+def get_time_plan(time_plan_func, car_df, ):
     """
     brief:规划每辆车的出发时刻
     :param car_df: car dataframe
-    :return: 每辆车的出发时刻
+    :return: 每辆车的出发时刻 time_plan: 数据格式:字典{carID： [carID, start time]}
     """
     pass
+
+
+def get_time_plan1(car_df):
+    time_plans = {}
+
+    # 根据每辆车的计划出发时间进行升序排列
+    car_df_sort = car_df.sort_values(by='planTime', axis=0, ascending=True)
+
+    i = 1
+    for carID, pT in zip(car_df_sort['id'], car_df_sort['planTime']):
+        pT += i
+        i += 1
+        time_plans[carID] = [carID, pT]
+
+    return time_plans
 
 
 def get_answer(car_list, path_plan, time_plan):

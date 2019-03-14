@@ -48,9 +48,11 @@ def write_answer2file(txt_path, answer_list):
 
 
 if __name__ == "__main__":
-    path = '/home/srn/SRn/Competition/HuaWei/hw_cc/SDK_python/CodeCraft-2019' + '/config_5/cross.txt'
-    path1 =  '/home/srn/SRn/Competition/HuaWei/hw_cc/SDK_python/CodeCraft-2019' + '/config_5/road.txt'
-    path2 = '/home/srn/SRn/Competition/HuaWei/hw_cc/SDK_python/CodeCraft-2019' + '/config_5/car.txt'
+    rpath = '/home/srn/SRn/Competition/HuaWei/hw_cc/SDK_python/CodeCraft-2019'
+    path = rpath + '/config/cross.txt'
+    path1 = rpath + '/config/road.txt'
+    path2 = rpath + '/config/car.txt'
+    path3 = rpath + '/config/answer.txt'
 
     df = read_from_txt(path)
     print(df.head())
@@ -95,6 +97,18 @@ if __name__ == "__main__":
 
     # 可视化有向图
     # adj_list_visualize(al)
+
+    # test get_time_plan
+    pt = get_time_plan1(df2)
+    print(pt)
+
+    answer = get_answer(df2['id'], pa, pt)
+    print(answer)
+
+    write_answer2file(path3, answer)
+
+
+
 
 
 
