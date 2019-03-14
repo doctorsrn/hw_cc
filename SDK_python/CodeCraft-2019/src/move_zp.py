@@ -624,6 +624,8 @@ def CalScheduleTime(answerfile,crossmap,roadmap,carmap,cross_size,road_size,car_
     print(scheduletime)
     print("car movetime:")
     print(movetime)
+    
+    return scheduletime
 
 def main():
     

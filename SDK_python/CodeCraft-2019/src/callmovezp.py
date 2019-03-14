@@ -29,7 +29,8 @@ def main():
     createnvir(cross_size)
 
     #求调度时间
-    CalScheduleTime(answerfile,crossmap,roadmap,carmap,cross_size,road_size,car_size,roadmat)   #参数：answer.txt路径、路口字典、道路字典、车辆字典、路口数目、道路数目、车辆数目、路网
-
+    value=CalScheduleTime(answerfile,crossmap,roadmap,carmap,cross_size,road_size,car_size,roadmat)   #参数：answer.txt路径、路口字典、道路字典、车辆字典、路口数目、道路数目、车辆数目、路网
+    print(value)
+    
 if __name__=="__main__":
     main()
