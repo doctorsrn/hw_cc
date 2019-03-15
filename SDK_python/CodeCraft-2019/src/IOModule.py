@@ -1,12 +1,13 @@
 import pandas
-import numpy as np
+# import numpy as np
 # from util import build_adjacency_list, adj_list_visualize, get_path, build_ad_list_without_edge_id
 from util import *
-from dijkstra.dijkstra import shortest_path
+# from dijkstra.dijkstra import shortest_path
 
 # from move_zp import *
 
 import time
+
 
 def read_from_txt(path_, type_= None):
     """
@@ -15,7 +16,7 @@ def read_from_txt(path_, type_= None):
     :return: pandas DataFrame
     """
     # read txt file, splice number
-    df = pandas.read_csv(path_, sep='[^\-|0-9]+', header=None, skiprows=1, engine='python')
+    df = pandas.read_csv(path_, sep='[^\\-|0-9]+', header=None, skiprows=1, engine='python')  # 正则表达式记得转义
 
     # delete NaN columns--> first column and last column
     df.drop(columns=[0, df.shape[1]-1], inplace=True)
@@ -35,6 +36,42 @@ def read_from_txt(path_, type_= None):
     return df
 
 
+def read_car_from_txt(path_):
+    df = pandas.read_csv(path_, sep='[^\\-|0-9]+', header=None, skiprows=1, engine='python')
+
+    # delete NaN columns--> first column and last column
+    df.drop(columns=[0, df.shape[1] - 1], inplace=True)
+
+    df.set_axis(['id', 'from', 'to', 'speed', 'planTime'], axis='columns', inplace=True)
+    df.set_index(df['id'], inplace=True)
+
+    return df
+
+
+def read_road_from_txt(path_):
+    df = pandas.read_csv(path_, sep='[^\\-|0-9]+', header=None, skiprows=1, engine='python')
+
+    # delete NaN columns--> first column and last column
+    df.drop(columns=[0, df.shape[1] - 1], inplace=True)
+
+    df.set_axis(['id', 'length', 'speed', 'channel', 'from', 'to', 'isDuplex'], axis='columns', inplace=True)
+    df.set_index(df['id'], inplace=True)
+
+    return df
+
+
+def read_cross_from_txt(path_):
+    df = pandas.read_csv(path_, sep='[^\\-|0-9]+', header=None, skiprows=1, engine='python')
+
+    # delete NaN columns--> first column and last column
+    df.drop(columns=[0, df.shape[1] - 1], inplace=True)
+
+    df.set_axis(['id', 'roadID1', 'roadID2', 'roadID3', 'roadID4'], axis='columns', inplace=True)
+    df.set_index(df['id'], inplace=True)
+
+    return df
+
+
 def write_answer2file(txt_path, answer_list):
     """
     :brief: write data to answer.txt, data pattern {carID, startTime, path series}
@@ -42,7 +79,7 @@ def write_answer2file(txt_path, answer_list):
     :param answer_list: answer 2维数组，数据格式例如:[[100, 1, 203, 303], [101, 3, 213, 303, 304, 432]]
     :return:
     """
-    with open(txt_path, 'w') as  output:
+    with open(txt_path, 'w') as output:
         output.write('#carID, StartTime, RoadID...\n')
         for answer in answer_list:
             answer_str = "".join([str(x)+',' for x in answer])  # 将int list型的answer转换为str类型，并以逗号隔开
@@ -50,7 +87,7 @@ def write_answer2file(txt_path, answer_list):
 
 
 if __name__ == "__main__":
-    rpath = '/home/srn/SRn/Competition/HuaWei/hw_cc/SDK_python/CodeCraft-2019/config_9'
+    rpath = '/home/srn/SRn/Competition/HuaWei/hw_cc/SDK_python/CodeCraft-2019/config0'
     path = rpath + '/cross.txt'
     path1 = rpath + '/road.txt'
     path2 = rpath + '/car.txt'
@@ -89,7 +126,7 @@ if __name__ == "__main__":
     # test function: get_all_cars_paths(adl_list, carIDL, startL, endL, use_networkx=True)
     pa = get_all_cars_paths(al, df2['id'], df2['from'], df2['to'], use_networkx=False)
     end_time = time.clock()
-    print('all cars paths：', pa)
+    # print('all cars paths：', pa)
     print(len(pa))
     print('CPU cost time for path plan: ', end_time-start_time)
 
@@ -117,12 +154,12 @@ if __name__ == "__main__":
 
     # test get_time_plan
     start_time = time.clock()
-    pt = get_time_plan1(df2)
+    pt = get_time_plan2(df2)
     print('CPU cost time for time plan: ', time.clock() - start_time)
-    print(pt)
+    # print(pt)
 
     answer = get_answer(df2['id'], pa, pt)
-    print(answer)
+    # print(answer)
 
     write_answer2file(path3, answer)
 
@@ -130,7 +167,5 @@ if __name__ == "__main__":
     # value = CalScheduleTime(path3, crossmap, crossidmap, roadmap, carmap, cross_size, road_size, car_size,
     #                         roadmat)  # 参数：answer.txt路径、路口字典、道路字典、车辆字典、路口数目、道路数目、车辆数目、路网
     # print(value)
-
-
 
 
