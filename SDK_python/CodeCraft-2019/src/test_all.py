@@ -71,13 +71,63 @@ def main():
     print("node list length:", len(nl))
     # greedy(gr, nl)
     # exhaustive(gr, nl)
+    # adj_list_visualize(al)
 
     # hp_finder.py test
-    nodes = get_node_from_pairs(dp)
-    graph = HamiltonianPath(len(nodes))
-    graph.pairs = dp
-    output = graph.isHamiltonianPathExist()
+    # nodes = get_node_from_pairs(dp)
+    # graph = HamiltonianPath(len(nodes))
+    # graph.pairs = dp
+    # for _  in range(100):
+    #     output = graph.isHamiltonianPathExist()
+    #     if len(output[0]) >=40:
+    #         print('output[0]:', output[0])
+    #         break
 
+        # TODO: if output[0][0] == output[0][-1]:   可以寻找 hamiltonian cycle
+
+    # test remove_hp_from_dp()
+    # print('remove_hp_from_dp:', remove_hp_from_dp(dp, output[0]))
+
+    # test rebuild_adl_from_hp(adl_, dp_, sp_, rp_, hp)
+    # hp = output[0]
+    # hp = [1, 9, 10, 2, 3, 11, 19, 27, 26, 34, 35, 43, 44, 36, 28, 20, 12, 4, 5, 13, 14, 15, 7, 8, 16, 24, 32, 31, 39, 40, 48, 56, 55, 63, 64]
+    hp = [1, 2, 3, 11, 10, 9, 17, 25, 26, 27, 19, 20, 21, 22, 30, 29, 37, 38, 39, 31, 32, 40, 48, 47, 46, 54, 62, 61, 53, 45, 44, 43, 42, 34, 33, 41, 49, 50, 58, 57]
+    # hp = [53, 61, 62, 54, 55, 56, 48, 40, 39, 31, 32, 24, 16, 8, 7, 15, 14, 13, 5, 4, 12, 20, 21, 22, 30, 29, 28, 36, 37, 45, 44, 43, 35, 34, 33, 41, 42, 50, 58, 59, 60, 52]
+    new_ad = rebuild_adl_from_hp(al, dp, sp, rp, hp)
+    print('new_ad:', new_ad)
+    print('new_ad[HP]:', new_ad['HP'])
+
+    # test get_path_with_hp(new_adl_, adl_, hp, start, end, use_networkx=False)#
+    # 测试了三种情况下的工作情况，一切正常
+    print(get_path(adw, 58, 8, use_networkx=False))
+    p = get_path(adw, 58, 8, use_networkx=False)
+    rp = replan_for_hp(hp, p)
+    print('replan(hp, p):', rp)
+    # print(get_path_with_hp(new_ad, al, hp, 'HP', 8, use_networkx=False))
+    # p = get_path_with_hp(new_ad, al, hp, 58, 8, use_networkx=False)
+    # print(p)
+
+    # exit(0)
+
+
+#################终极测试
+    start_time = time.clock()
+
+    # test function: get_all_cars_paths(adl_list, carIDL, startL, endL, use_networkx=True)
+    pa = get_all_paths_with_hp(al, road_df, car_df['id'], car_df['from'], car_df['to'])
+    end_time = time.clock()
+    # print('all cars paths：', pa)
+    print(len(pa))
+    print('CPU cost time for path plan: ', end_time - start_time)
+
+    #####
+
+    # adj_list_visualize(new_ad)
+
+    # 基于hp的路径规划
+    # p = get_path(new_ad, 6, 33, use_networkx=False)
+    # print('shortest path is:', p)
+    exit(1)
 
     # # hamiltonian path test
     # get_hamiltonian_path(adw, 1, 20)
@@ -88,9 +138,9 @@ def main():
 
     # 最短路径搜索
     # adw['HP'] = {9: 2.5, 1: 2.5}
-    p = get_path(adw, 1, 20)
+    p = get_path(adw, 1, 20, use_networkx=False)
     print('shortest path is:', p)
-    exit(1)
+
 
     # 最短路径搜索
     p1 = shortest_path(adw, 1, 20)
@@ -100,7 +150,6 @@ def main():
 
     # test function: get_all_cars_paths(adl_list, carIDL, startL, endL, use_networkx=True)
     pa = get_all_cars_paths(al, df2['id'], df2['from'], df2['to'], use_networkx=False)
-    print()
 
     end_time = time.clock()
     # print('all cars paths：', pa)

@@ -42,8 +42,10 @@ import copy
 import matplotlib.pyplot as plt
 from dijkstra.dijkstra import shortest_path
 
-import public_transport
-import simulated_annealing
+# import public_transport
+# import simulated_annealing
+
+from hp_finder import HamiltonianPath
 
 
 try:
@@ -348,7 +350,413 @@ def get_hamiltonian_path(adl_list_w, start, end, use_networkx=True):
     return path
 
 
-def get_path(adl_list_w, start, end, use_networkx=True):
+def remove_hp_from_dp(dp_, hp):
+    """
+    将duplex pairs中含有的hamiltonian path pairs删除，参见cut_adjacency_list()返回的数据
+    :param dp_: duplex pairs, 数据举例[[1, 9], [1, 2], [2, 10], [2, 3], [3, 11], [4, 12],...]
+    :param hp: hamiltonian path, 数据举例[46, 38, 37, 36, 28, 29, 30, 22, 21, 20, 19, 27...]
+    :return: 返回删除后的dp
+    """
+    for node, next_node in zip(hp[:-1], hp[1:]):
+        if [node, next_node] in dp_:
+            dp_.remove([node, next_node])
+        elif [next_node, node] in dp_:
+            dp_.remove([next_node, node])
+        else:
+            print('[node, next_node]:', [node, next_node])
+            #TODO: SOME ERROR HERE TO DEBUG
+            # raise Exception('hp pairs not in duplex pairs')
+    return dp_
+
+
+def rebuild_adl_from_hp(adl_, dp_, sp_, rp_, hp):
+    """
+    从剪枝之后的duplex pairs, simple pairs和hamiltonian path生成新的邻接表
+    dp_, sp_, rp_: 参见cut_adjacency_list()返回的数据
+    :param adl_: 带有权重和边信息的原始邻接表, 数据举例:{1: {9: [5007, 2.5], 2: [5000, 2.5]}, 2: {1: [5000, 2.5], 10: [5008, 2.0],...}}
+    :param dp_: 剪枝留下的用于寻找hamiltonian path的双向对, 数据举例[[1, 9], [1, 2], [2, 10], [2, 3], [3, 11], [4, 12],...]
+    :param sp_: 剪枝剪掉的单向对， 格式同上，但有方向指向
+    :param rp_: 剪枝剪掉的双向对， 格式同上
+    :param hp: 从剪枝留下的主干dp_生成的hamiltonian path, 数据举例[46, 38, 37, 36, 28, 29, 30, 22, 21, 20, 19, 27...]
+    :return: 返回新的邻接表, 格式{1: {9: 2.5, 2: 2.5}, 2: {1: 2.5, 10: 2.0, 3: 4.5},...}
+    """
+    # 新的邻接表, 数据格式： 带权重，不带边
+    new_adl = {}
+
+    # 将带边信息的邻接表转化为不带便的邻接表
+    adwE = convert_adl2adl_w(adl_)
+
+    # 得到所有不在hamiltonian path中的双向对
+    all_dp = rp_ + remove_hp_from_dp(dp_, hp)
+
+    ############ 下面为无效代码
+    # # 从all_dp添加邻接关系至新的邻接表
+    # for pair in all_dp:
+    #     # pair[0] -> pair[1]
+    #     if new_adl.__contains__(pair[0]):
+    #         weight = adwE[pair[0]][pair[1]]
+    #         new_adl[pair[0]][pair[1]] = weight
+    #     else:
+    #         weight = adwE[pair[0]][pair[1]]
+    #         new_adl[pair[0]] = {pair[1]: weight}
+    #
+    #     # pair[1] -> pair[0]
+    #     if new_adl.__contains__(pair[1]):
+    #         weight = adwE[pair[1]][pair[0]]
+    #         new_adl[pair[1]][pair[0]] = weight
+    #     else:
+    #         weight = adwE[pair[1]][pair[0]]
+    #         new_adl[pair[1]] = {pair[0]: weight}
+    #
+    # # 从sp中添加邻接关系至邻接表
+    # for pair in sp_:
+    #     # 只有单向pair[0] -> pair[1]
+    #     if new_adl.__contains__(pair[0]):
+    #         weight = adwE[pair[0]][pair[1]]
+    #         new_adl[pair[0]][pair[1]] = weight
+    #     else:
+    #         weight = adwE[pair[0]][pair[1]]
+    #         new_adl[pair[0]] = {pair[1]: weight}
+
+    # 将hp中的所有节点作为一个大节点，命名为'HP',且'HP'继承它所包含节点的邻接关系
+    # hp是list
+    for node, value in adwE.items():
+        for next_node, weight in value.items():
+            # 如果node和指向的next node都在hp中,则不用添加至新邻接表，因为它们均为'HP'节点--->这种想法错误
+            # 会导致很多邻接关系丢失，应该将这种情况看为'HP' <---> node,和'HP' <---> next_node共四种单向连接关系
+            if (node in hp) and (next_node in hp):
+                if new_adl.__contains__('HP'):
+                    # TODO:这种情况的weight待定？？？????????????????????????????????????有待讨论
+                    new_adl['HP'][next_node] = weight
+                    new_adl['HP'][node] = weight
+                else:
+                    new_adl['HP'] = {next_node: weight}
+                    new_adl['HP'] = {node: weight}
+
+                if new_adl.__contains__(node):
+                    new_adl[node]['HP'] = weight
+                else:
+                    new_adl[node] = {'HP': weight}
+
+                if new_adl.__contains__(next_node):
+                    new_adl[next_node]['HP'] = weight
+                else:
+                    new_adl[next_node] = {'HP': weight}
+
+                break
+
+            # 否则按照指向添加至新邻接表
+            # 'HP' -> other node
+            if node in hp:
+                if new_adl.__contains__('HP'):
+                    new_adl['HP'][next_node] = weight
+                else:
+                    new_adl['HP'] = {next_node: weight}
+            # other node -> 'HP'
+            elif next_node in hp:
+                if new_adl.__contains__(node):
+                    new_adl[node]['HP'] = weight
+                else:
+                    new_adl[node] = {'HP': weight}
+            # 非ph中的节点间的邻接关系保持不变
+            else:
+                if new_adl.__contains__(node):
+                    new_adl[node][next_node] = weight
+                else:
+                    new_adl[node] = {next_node: weight}
+
+    return new_adl
+
+
+def __get_value_in_list(sl, start, end):
+    """
+    从列表中获取元素start, end之前的值
+    :param sl:单元素列表
+    :param start:
+    :param end:
+    :return:
+    """
+    if start not in sl or end not in sl:
+        raise Exception("Invalid input for start or end.")
+
+    sub_list = sl[sl.index(start):sl.index(end)]
+
+    if len(sub_list) == 0:
+        sl_reverse = sl[::-1]
+        sub_list = sl_reverse[sl_reverse.index(start):sl_reverse.index(end)]
+    sub_list.append(end)
+
+    return sub_list
+
+
+def get_path_with_hp(new_adl_, adl_, hp, start, end, use_networkx=False):
+    """
+    基于hamiltonian path进行路径规划
+    :param adl_: 旧的邻接表，有边信息，格式{1: {9: [5007, 2.5], 2: [5000, 2.5]}, 2: {1: [5000, 2.5], 10: [5008, 2.0], 3: [5001, 4.5]},...}
+    :param new_adl_: 重建后的邻接表
+    :param hp:
+    :param start:
+    :param end:
+    :param use_networkx:
+    :return:
+    """
+    # TODO: 记得之后有时间的话添加路径不存在情况的异常判断和处理
+    # 将带边信息的邻接表转化为不带便的邻接表
+    adwE = convert_adl2adl_w(adl_)
+    # path = []
+
+    # 如果start和end都在hp中
+    if (start in hp) and (end in hp):
+        # print("start&end in hp")
+        # path = hp[hp.index(start):hp.index(end)]
+        # # path 为空需要倒序重新分割出路径
+        # if len(path) == 0:
+        #     hp_reverse = hp[::-1]
+        #     path = hp_reverse[hp_reverse.index(start):hp_reverse.index(end)]
+        # path.append(end)
+
+        path = __get_value_in_list(hp, start, end)
+        return path
+
+    # start在hp,而end不在
+    elif start in hp:
+        # print("start in hp")
+        # 将起始节点设为'HP'
+        start_n = 'HP'
+
+        # 得到部分路径
+        path1 = get_path(new_adl_, start_n, end, use_networkx)
+        # print('path1:', path1)
+
+        # path1[0]='HP', path1[1]对应的节点和hp有邻接关系,由hp指向path1[1]
+        connect_node = path1[1]
+
+        # 如果start直接和connect node相连，可以直接返回
+        if connect_node in adwE[start].keys():
+            path1[0] = start
+            # 得到路径
+            path = path1
+
+            return path
+
+        # 寻找node在hp中, next node是conne_node的节点
+        connect_node_in_hp = []
+        for node, value in adwE.items():
+            for next_node in value.keys():
+
+                if (next_node == connect_node) and (node in hp):
+                    connect_node_in_hp.append(node)
+
+        # 从connect_node_in_hp中选取距离start最近的点
+        if len(connect_node_in_hp) == 0:
+            raise Exception("cannot find path with HP.")
+        if len(connect_node_in_hp) == 1:
+            middle_node = connect_node_in_hp[0]
+
+            # path = hp[hp.index(start):hp.index(middle_node)]
+            # # path 为空需要倒序重新分割出路径
+            # if len(path) == 0:
+            #     hp_reverse = hp[::-1]
+            #     path = hp_reverse[hp_reverse.index(start):hp_reverse.index(middle_node)]
+            # path.append(middle_node)
+
+            path = __get_value_in_list(hp, start, middle_node)
+
+            # final path
+            path = path + path1[1:]
+        else:
+            init_l = 1000
+            path_short = []
+            for middle_node in connect_node_in_hp:
+                path_t = __get_value_in_list(hp, start, middle_node)
+                if len(path_t) < init_l:
+                    init_l = len(path_t)
+                    path_short = path_t
+            # final path
+            path = path_short + path1[1:]
+
+        return path
+
+############################################################ some error may occur
+    elif end in hp:
+        # print("end in hp")
+        # 将起始节点设为'HP'
+        end_n = 'HP'
+
+        # 得到部分路径
+        path1 = get_path(new_adl_, start, end_n)
+        # print("path1:", path1)
+
+        # path1[-1]='HP', path1[-2]对应的节点和hp有邻接关系,由hp指向path1[1]
+        connect_node = path1[-2]
+
+        # 如果start直接和connect node相连，可以直接返回
+        if connect_node in adwE[end].keys():
+            path1[-1] = end
+            # 得到路径
+            path = path1
+
+            return path
+
+        # 寻找node在conne_node, next node在hp中
+        connect_node_in_hp = []
+        for node, value in adwE.items():
+            for next_node in value.keys():
+
+                if (node == connect_node) and (next_node in hp):
+                    connect_node_in_hp.append(next_node)
+
+        # print("connect_node_in_hp:", connect_node_in_hp)
+
+        # 从connect_node_in_hp中选取距离start最近的点
+        if len(connect_node_in_hp) == 0:
+            raise Exception("cannot find path with HP.")
+        if len(connect_node_in_hp) == 1:
+            middle_node = connect_node_in_hp[0]
+
+            # path = hp[hp.index(start):hp.index(middle_node)]
+            # # path 为空需要倒序重新分割出路径
+            # if len(path) == 0:
+            #     hp_reverse = hp[::-1]
+            #     path = hp_reverse[hp_reverse.index(start):hp_reverse.index(middle_node)]
+            # path.append(middle_node)
+
+            path = __get_value_in_list(hp, middle_node, end)
+
+            # final path
+            path = path1[:-1] + path
+        else:
+            init_l = 1000
+            path_short = []
+            for middle_node in connect_node_in_hp:
+                path_t = __get_value_in_list(hp, middle_node, end)
+                if len(path_t) < init_l:
+                    init_l = len(path_t)
+                    path_short = path_t
+            # final path
+            path = path1[:-1] + path_short
+
+        return path
+
+    # start和end均不在hp中  # TODO: 可能出现start和end均不在hp中，且无法仅通过一次HP就能得到所有路径，也就是此处可能会报错get_path(new_adl_, start, end)无法找打路径
+    else:
+        path_t = get_path(new_adl_, start, end)
+
+        # 根据路径中是否包含'HP'节点而分情况讨论
+        # 如果路径中包含'HP'节点: 例如[1,2,5,7,'HP',12], 即1->2->5->7->'HP'->12
+        if 'HP' in path_t:
+            hp_index = path_t.index('HP')
+            left_node = path_t[hp_index-1]
+            right_node = path_t[hp_index+1]
+
+            l_mid_node = []
+            r_mid_node = []
+            # 寻找所有满足条件的在hp中的中间节点
+            for node, value in adwE.items():
+                for next_node in value.keys():
+
+                    if (node == left_node) and (next_node in hp):
+                        l_mid_node.append(next_node)
+
+                    if (node in hp) and (next_node == right_node):
+                        r_mid_node.append(node)
+
+
+            # TODO：根据权重选择
+            # TODO:写不动了，随便选一个了
+            if (len(l_mid_node) != 0) and (len(r_mid_node) != 0):
+                path_mid = __get_value_in_list(hp, l_mid_node[0], r_mid_node[0])
+
+                path = path_t[:hp_index] + path_mid + path_t[hp_index+1:]
+
+                return path
+        # 如果不包含，则直接返回
+        else:
+            return path_t
+
+
+def get_all_paths_with_hp(adl_list, road_df, carIDL, startL, endL, use_networkx=False):
+
+    paths = {}
+    adl_list_w = convert_adl2adl_w(adl_list)
+
+    # 剪枝
+    dp, sp, rp = cut_adjacency_list(adl_list, road_df, cut_channel_level=0, cut_speed_level=1)
+
+    # 搜索较优的hamiltonian path
+    nodes = get_node_from_pairs(dp)
+    graph = HamiltonianPath(len(nodes))
+    graph.pairs = dp
+    for _ in range(300):
+        output = graph.isHamiltonianPathExist()
+        if len(output[0]) >= 40:
+            break
+            # print('output[0]:', output[0])
+            # try:
+            #     # 重新构建邻接表
+            #     new_ad = rebuild_adl_from_hp(adl_list, dp, sp, rp, hp)
+            #
+            #     # 基于get_path_with_hp()函数进行路径规划
+            #     # 为所有车各规划一条最短路径
+            #     for carID, st, ed in zip(carIDL, startL, endL):
+            #         path_n = get_path_with_hp(new_ad, adl_list, hp, st, ed)
+            #
+            #         # 将规划得到的节点构成的路径转换为边构成的路径
+            #         path_e = get_path_n2e(path_n, adl_list)
+            #
+            #         paths[carID] = path_e
+            #
+            #     break
+            # except:
+            #     print("run once more")
+
+
+    hp = output[0]
+    #
+    # 重新构建邻接表
+    new_ad = rebuild_adl_from_hp(adl_list, dp, sp, rp, hp)
+
+    # 基于get_path_with_hp()函数进行路径规划
+    # 为所有车各规划一条最短路径
+    for carID, st, ed in zip(carIDL, startL, endL):
+        try:
+            path_n = get_path_with_hp(new_ad, adl_list, hp, st, ed)
+        except:
+            # print("hp", hp)
+            # print("error:st, ed", st, ed)
+            path_n = shortest_path(adl_list_w, st, ed)
+            path_n = replan_for_hp(hp, path_n)
+
+        # 将规划得到的节点构成的路径转换为边构成的路径
+        path_e = get_path_n2e(path_n, adl_list)
+
+        paths[carID] = path_e
+
+    return paths
+
+
+def replan_for_hp(hp, path_):
+    # print(hp, path_)
+    for a in path_:
+        if a in hp:
+            lf = a
+            lf_index = path_.index(a)
+            break
+
+    for b in path_[::-1]:
+        if b in hp:
+            rt = b
+            rt_index = path_.index(b)
+            break
+
+    # print(lf_index,rt_index,lf,rt)
+    if lf_index < rt_index:
+        path_ = path_[:lf_index] + __get_value_in_list(hp, lf, rt) + path_[rt_index+1:]
+
+    return path_
+
+
+def get_path(adl_list_w, start, end, use_networkx=False):
     """
     brief: 给定起点和终点，从邻接表中搜索得到一条可行路径，满足最优条件
     :param adl_list_w: 不带边ID的邻接表
@@ -438,6 +846,22 @@ def get_time_plan(time_plan_func, car_df, ):
     pass
 
 
+def get_time_plan0(car_df):
+    """
+    不更改出发时间
+    :param car_df:
+    :return:
+    """
+    time_plans = {}
+
+    for carID, pT in zip(car_df['id'], car_df['planTime']):
+
+        time_plans[carID] = [carID, pT]
+
+    return time_plans
+
+
+
 def get_time_plan1(car_df):
     """
     brief:简单粗暴的时间安排1
@@ -454,6 +878,41 @@ def get_time_plan1(car_df):
     # before:(0.3,50)->20406  (0.35,30)->20550 (0.3,35)->20476 (0.3,55)->20382
     split_factor = 0.3
     max_delay_time = 55
+
+    i = 1
+    for carID, pT in zip(car_df_sort['id'], car_df_sort['planTime']):
+        pT += i
+        i += 1
+        if i/car_len < split_factor:
+            pT = pT + int(i/(split_factor*car_len) * max_delay_time)
+            time_plans[carID] = [carID, pT]
+
+        if (i/car_len >= split_factor) and (i/car_len <= (1-split_factor)):
+            pT = pT + max_delay_time
+            time_plans[carID] = [carID, pT]
+        if i/car_len > (1-split_factor):
+            pT = pT + int(max_delay_time - i / (split_factor * car_len) * max_delay_time)
+            time_plans[carID] = [carID, pT]
+
+    return time_plans
+
+
+def get_time_plan3(car_df):
+    """
+    brief:简单粗暴的时间安排1
+    :param car_df:
+    :return:
+    """
+    time_plans = {}
+
+    # 根据每辆车的计划出发时间进行升序排列
+    car_df_sort = car_df.sort_values(by='planTime', axis=0, ascending=True)
+    car_len = len(car_df_sort['id'])
+
+    # some parameters
+    # before:(0.3,50)->20406  (0.35,30)->20550 (0.3,35)->20476 (0.3,55)->20382
+    split_factor = 0.3
+    max_delay_time = 5
 
     i = 1
     for carID, pT in zip(car_df_sort['id'], car_df_sort['planTime']):

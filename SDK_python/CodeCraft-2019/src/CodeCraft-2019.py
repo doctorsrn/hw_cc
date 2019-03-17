@@ -56,7 +56,9 @@ def main():
     ad_l = build_adjacency_list(cross_df, road_df)
 
     # get path plans
-    paths = get_all_cars_paths(ad_l, car_df['id'], car_df['from'], car_df['to'], use_networkx=False)
+    # paths = get_all_cars_paths(ad_l, car_df['id'], car_df['from'], car_df['to'], use_networkx=False)
+
+    paths = get_all_paths_with_hp(ad_l, road_df, car_df['id'], car_df['from'], car_df['to'])
 
     # ##############
     # # debug
@@ -73,7 +75,7 @@ def main():
     # ###############
 
     # get time plans
-    time_plans = get_time_plan1(car_df)
+    time_plans = get_time_plan0(car_df)
 
     # get answer
     answers = get_answer(car_df['id'], paths, time_plans)

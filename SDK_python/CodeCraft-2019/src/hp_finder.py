@@ -60,7 +60,7 @@ class HamiltonianPath:
                 if pair not in self.pairs and invertedPair not in self.pairs:
                     self.pairs.append(pair)
 
-        print("Pairs:", self.pairs)
+        # print("Pairs:", self.pairs)
         # exit(0)
 
     def generatePathLink(self):
@@ -86,7 +86,7 @@ class HamiltonianPath:
                 finally:
                     pass
 
-        print("Graph linkage:", self.graphLink)
+        # print("Graph linkage:", self.graphLink)
 
 
     def grasp(self):
@@ -141,9 +141,9 @@ class HamiltonianPath:
                 return [True,newBestSolution]
 
             else:
-                print("\nBest Solution Found:", newBestSolution)
-                print("\nLength of path:", len(newBestSolution))
-                print("\nLength of solution list:",len(solutionList))
+                # print("\nBest Solution Found:", newBestSolution)
+                # print("\nLength of path:", len(newBestSolution))
+                # print("\nLength of solution list:",len(solutionList))
                 return [False,newBestSolution]
 
         else:
@@ -167,10 +167,10 @@ class HamiltonianPath:
             result = self.grasp()
             time_elapsed = (time.clock() - time_start)
             if result[0]:
-                print("Computing time:", round(time_elapsed, 2), "seconds\n")
+                # print("Computing time:", round(time_elapsed, 2), "seconds\n")
                 return [result[1], time_elapsed]
             else:
-                print("Computing time:", round(time_elapsed, 2), "seconds\n")
+                # print("Computing time:", round(time_elapsed, 2), "seconds\n")
                 return [result[1], time_elapsed]
 
     def greedySearch(self, solution):
