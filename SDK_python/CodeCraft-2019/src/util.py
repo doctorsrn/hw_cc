@@ -425,23 +425,23 @@ def rebuild_adl_from_hp(adl_, dp_, sp_, rp_, hp):
             # 如果node和指向的next node都在hp中,则不用添加至新邻接表，因为它们均为'HP'节点--->这种想法错误
             # 会导致很多邻接关系丢失，应该将这种情况看为'HP' <---> node,和'HP' <---> next_node共四种单向连接关系
             if (node in hp) and (next_node in hp):
-                if new_adl.__contains__('HP'):
-                    # TODO:这种情况的weight待定？？？????????????????????????????????????有待讨论
-                    new_adl['HP'][next_node] = weight
-                    new_adl['HP'][node] = weight
-                else:
-                    new_adl['HP'] = {next_node: weight}
-                    new_adl['HP'] = {node: weight}
-
-                if new_adl.__contains__(node):
-                    new_adl[node]['HP'] = weight
-                else:
-                    new_adl[node] = {'HP': weight}
-
-                if new_adl.__contains__(next_node):
-                    new_adl[next_node]['HP'] = weight
-                else:
-                    new_adl[next_node] = {'HP': weight}
+                # if new_adl.__contains__('HP'):
+                #     # TODO:这种情况的weight待定？？？????????????????????????????????????有待讨论
+                #     new_adl['HP'][next_node] = weight
+                #     new_adl['HP'][node] = weight
+                # else:
+                #     new_adl['HP'] = {next_node: weight}
+                #     new_adl['HP'] = {node: weight}
+                #
+                # if new_adl.__contains__(node):
+                #     new_adl[node]['HP'] = weight
+                # else:
+                #     new_adl[node] = {'HP': weight}
+                #
+                # if new_adl.__contains__(next_node):
+                #     new_adl[next_node]['HP'] = weight
+                # else:
+                #     new_adl[next_node] = {'HP': weight}
 
                 break
 
