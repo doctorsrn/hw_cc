@@ -42,6 +42,9 @@ import copy
 import matplotlib.pyplot as plt
 from dijkstra.dijkstra import shortest_path
 
+import public_transport
+import simulated_annealing
+
 
 try:
     global USE_NETWORKX
@@ -49,6 +52,8 @@ try:
     # if USE_NETWORKX = True, use dijkstra lib to get shortest path
     USE_NETWORKX = True
     import networkx as nx
+    from networkx.algorithms import tournament
+    from networkx.algorithms import cycles
 except ImportError:
     nx = None
     USE_NETWORKX = False
@@ -128,6 +133,49 @@ def build_ad_list_without_edge_id(cross_df, road_df):
     return ad_list_without_edge_id
 
 
+def build_ad_list_without_weight(cross_df, road_df, str_pattern=False):
+    """
+    brief: 从cross_df, road_df得到不带边ID的邻接表
+    :param cross_df:
+    :param road_df:
+    :return:
+    """
+    # 不带边ID的邻接表结构： 使用嵌套字典：{节点：{相邻节点1：边权重, 相邻节点2：边权重, '''}}
+    ad_list_without_weight = {}
+    # weight = 0
+    # next_cross_id = 0
+
+    for cross_id in cross_df['id']:
+        for i in range(4):
+            r_id = 'roadID' + str(i + 1)
+
+            # 从cross dataframe中得到路的ID
+            road = cross_df[r_id][cross_id]
+            if road != -1:
+                # 得到下一个路口ID
+                next_cross_id = road_df['to'][road]
+
+                # 如果获取的'to'路口ID与当前路口ID一样，则说明下一个路口的ID为'from'中存储的路口ID
+                if (next_cross_id == cross_id) and (road_df['isDuplex'][road] == 1):
+                    next_cross_id = road_df['from'][road]
+                # 设置该条边的权重
+                # weight = weight_func(road_df['length'][road], road_df['speed'][road])
+
+                # 将数据存入嵌套字典
+                if not str_pattern:
+                    if ad_list_without_weight.__contains__(cross_id):
+                        ad_list_without_weight[cross_id].append(next_cross_id)
+                    else:
+                        ad_list_without_weight[cross_id] = [next_cross_id]
+                else:
+                    if ad_list_without_weight.__contains__(str(cross_id)):
+                        ad_list_without_weight[str(cross_id)].append(str(next_cross_id))
+                    else:
+                        ad_list_without_weight[str(cross_id)] = [str(next_cross_id)]
+
+    return ad_list_without_weight
+
+
 def convert_adl2adl_w(adl):
     """
     brief: 将带有边ID的邻接表转换为不带边ID的邻接表
@@ -161,6 +209,17 @@ def get_path_n2e(path_n, ad_list):
     return path_e
 
 
+def get_node_from_pairs(pairs_):
+    nodes = []
+    for p in pairs_:
+        if p[0] not in nodes:
+            nodes.append(p[0])
+        if p[1] not in nodes:
+            nodes.append(p[1])
+
+    return nodes
+
+
 def adj_list_visualize(adl_list_):
     """
     brief: 将邻接表表征的有向图进行可视化
@@ -183,10 +242,110 @@ def adj_list_visualize(adl_list_):
     return
 
 
+def cut_adjacency_list(adl_, road_df, cut_speed_level=0, cut_channel_level=0):
+    """
+    传入带边信息的邻接表，格式：{1: {9: [5007, 2.5], 2: [5000, 2.5]}, 2: {1: [5000, 2.5], 10: [5008, 2.0],,对邻接表进行剪枝
+    剪枝原则： 1.减掉两个节点间非双向的连接
+            2.根据道路的最大速度进行剪枝，考虑先将最大速度、车道小于某个值的道路剪掉，根据Hamiltonian Path的搜索情况再决定是否继续剪枝
+    :param road_df: road dateframe
+    :param cut_channel_level:
+    :param cut_speed_level:
+    :param adl_:
+    :return:
+    """
+    # 得到不带边信息的邻接表
+    adwE = convert_adl2adl_w(adl_)
+
+    # duplex connect pairs
+    # single connect pairs
+    d_connect_pairs = []
+    s_connect_pairs = []
+
+    # rest pairs after cutted by speed or channel parameter
+    rest_pairs = []
+
+    # 剪枝，减掉非双相连接的节点
+    for key, value in adwE.items():
+        for next_node in value.keys():
+
+            if adwE[next_node].__contains__(key):
+                # 当前节点间是双向连接
+                if ([key, next_node] not in d_connect_pairs) and ([next_node, key] not in d_connect_pairs):
+                    d_connect_pairs.append([key, next_node])
+
+            else:
+                # 当前节点间不是双向连接
+                if [key, next_node] not in s_connect_pairs:
+                    s_connect_pairs.append([key, next_node])
+
+    if cut_speed_level != 0:
+        # 将双向道路中通行速度小于cut_speed_level的减掉
+        dcp_temp = copy.deepcopy(d_connect_pairs)
+        for pair in dcp_temp:
+            # 根据带边ID的邻接表得到对应的边ID
+            roadID = (adl_[pair[0]][pair[1]])[0]
+            if (road_df['speed'][roadID] <= cut_speed_level) or (road_df['channel'][roadID] <= cut_channel_level):
+                # 剪掉
+                d_connect_pairs.remove(pair)
+                # 回收剪掉的pair
+                rest_pairs.append(pair)
+
+        return d_connect_pairs, s_connect_pairs, rest_pairs
+
+    elif cut_channel_level != 0:
+        dcp_temp = copy.deepcopy(d_connect_pairs)
+        for pair in dcp_temp:
+            # 根据带边ID的邻接表得到对应的边ID
+            roadID = (adl_[pair[0]][pair[1]])[0]
+            if road_df['channel'][roadID] <= cut_speed_level:
+                # 剪掉
+                d_connect_pairs.remove(pair)
+                # 回收剪掉的pair
+                rest_pairs.append(pair)
+
+        return d_connect_pairs, s_connect_pairs, rest_pairs
+
+    else:
+        pass
+
+    return d_connect_pairs, s_connect_pairs, rest_pairs
+
+
 # TODO: 权重函数还没有进行科学设置
 def weight_func(road_l, road_mv):
     weight = road_l / road_mv
     return weight
+
+
+def get_hamiltonian_path(adl_list_w, start, end, use_networkx=True):
+    """
+    brief: 给定起点和终点，从邻接表中搜索得到一条可行路径，满足最优条件
+    :param adl_list_w: 不带边ID的邻接表
+    :param start:
+    :param end:
+    :param use_networkx: 默认根据networkx库导入情况决定使用那种方法获取路径
+    :return:
+    """
+    global USE_NETWORKX
+    if USE_NETWORKX and use_networkx:
+        G = nx.DiGraph()
+        for st in adl_list_w.keys():
+            for to in adl_list_w[st].keys():
+                G.add_edge(st, to, weight=(adl_list_w[st][to]))
+
+        # path = nx.algorithms.shortest_path(G, start, end)
+        path = []
+        print(tournament.is_tournament(G))
+        print(tournament.hamiltonian_path(G))
+        # x = cycles.simple_cycles(G)
+        # print(x)
+        # y = cycles.find_cycle(G)
+        # print(y)
+    else:
+        path = []
+        pass
+
+    return path
 
 
 def get_path(adl_list_w, start, end, use_networkx=True):
@@ -229,6 +388,14 @@ def get_all_cars_paths(adl_list, carIDL, startL, endL, use_networkx=True):
     global USE_NETWORKX
     paths = {}
     adl_list_w = convert_adl2adl_w(adl_list)
+
+    if False:
+        network = public_transport.TransportNetwork.load_from_adjacency_list(adl_list_w)
+        for carID, st, ed in zip(carIDL, startL, endL):
+            start_stop = public_transport.Stop(str(st))
+            end_stop = public_transport.Stop(str(ed))
+            min_travel_time, shortest_connection = network.find_shortest_connection(start_stop, end_stop)
+            paths[carID] = shortest_connection
 
     if USE_NETWORKX and use_networkx:
         G = nx.DiGraph()
