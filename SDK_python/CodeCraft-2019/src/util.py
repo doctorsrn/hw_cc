@@ -675,6 +675,19 @@ def get_path_with_hp(new_adl_, adl_, hp, start, end, use_networkx=False):
             return path_t
 
 
+def get_path_with_hp_simple(adl_, hp, start, end, use_networkx=False):
+    """
+    直接使用重规划将dijkstra规划得到的路接入HP中
+    """
+    adl_list_w = convert_adl2adl_w(adl_)
+
+    path_origin = shortest_path(adl_list_w, start, end)
+
+    path = replan_for_hp(hp, path_origin)
+
+    return path
+
+
 def get_all_paths_with_hp(adl_list, road_df, carIDL, startL, endL, use_networkx=False):
 
     paths = {}
@@ -720,7 +733,8 @@ def get_all_paths_with_hp(adl_list, road_df, carIDL, startL, endL, use_networkx=
     # 为所有车各规划一条最短路径
     for carID, st, ed in zip(carIDL, startL, endL):
         try:
-            path_n = get_path_with_hp(new_ad, adl_list, hp, st, ed)
+            # path_n = get_path_with_hp(new_ad, adl_list, hp, st, ed)
+            path_n = get_path_with_hp_simple(adl_list, hp, st, ed)
         except:
             # print("hp", hp)
             # print("error:st, ed", st, ed)
@@ -736,6 +750,12 @@ def get_all_paths_with_hp(adl_list, road_df, carIDL, startL, endL, use_networkx=
 
 
 def replan_for_hp(hp, path_):
+    """
+    将规划出来的path_从
+    :param hp:
+    :param path_:
+    :return:
+    """
     # print(hp, path_)
     for a in path_:
         if a in hp:
@@ -952,6 +972,9 @@ def get_time_plan2(car_df):
         time_plans[carID] = [carID, pT]
 
     return time_plans
+
+def get_time_plan4(car_df):
+    pass
 
 
 def get_answer(car_list, path_plan, time_plan):
