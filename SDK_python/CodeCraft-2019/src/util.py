@@ -639,6 +639,7 @@ def get_all_paths_with_hc(adl_list, road_df, carIDL, startL, endL, use_networkx=
     # 剪枝
     dp, sp, rp = cut_adjacency_list(adl_list, road_df, cut_channel_level=1, cut_speed_level=1)
     
+    _, hc = get_bestHCHP(dp)
 
     # 基于get_path_with_hp()函数进行路径规划
     # 为所有车各规划一条最短路径
@@ -651,7 +652,7 @@ def get_all_paths_with_hc(adl_list, road_df, carIDL, startL, endL, use_networkx=
             # print("hp", hp)
             # print("error:st, ed", st, ed)
             path_n = shortest_path(adl_list_w, st, ed)
-#            path_n = replan_for_hc(hc, path_n)
+            path_n = replan_for_hc(hc, path_n)
 
         # 将规划得到的节点构成的路径转换为边构成的路径
         path_e = get_path_n2e(path_n, adl_list)
