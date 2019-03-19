@@ -11,10 +11,13 @@ from hp import greedy, exhaustive
 from hp_finder import HamiltonianPath
 import public_transport
 import simulated_annealing
+from concurrent.futures import ProcessPoolExecutor
+
 
 
 def main():
-    rpath = '/home/srn/SRn/Competition/HuaWei/hw_cc/SDK_python/CodeCraft-2019/config0'
+#    rpath = '/home/srn/SRn/Competition/HuaWei/hw_cc/SDK_python/CodeCraft-2019/config0'
+    rpath = '../config0'
     path = rpath + '/cross.txt'
     path1 = rpath + '/road.txt'
     path2 = rpath + '/car.txt'
@@ -74,14 +77,48 @@ def main():
     # adj_list_visualize(al)
 
     # hp_finder.py test
-    # nodes = get_node_from_pairs(dp)
-    # graph = HamiltonianPath(len(nodes))
-    # graph.pairs = dp
-    # for _  in range(100):
-    #     output = graph.isHamiltonianPathExist()
-    #     if len(output[0]) >=40:
-    #         print('output[0]:', output[0])
-    #         break
+    nodes = get_node_from_pairs(dp)
+    print('len of nodes and pairs:',len(nodes), len(dp))
+    nodes.sort()
+    print(nodes)
+    
+    ########### get HC test
+#    graph = HamiltonianPath(len(nodes))
+#    graph.pairs = dp
+#    for i  in range(2000):
+#        output = graph.isHamiltonianPathExist()
+#        # # find long HP
+#        # if len(output[0]) >=40:
+#        #     print('Hamiltonian Paths:', len(output[0]))
+#        #     print('output[0]:', output[0])
+#        #     break
+##        print('output[0]:', output[0])
+#        # find long HC
+#        print(i)
+#        if len(output[0]) >= 40:
+#            print('output[0]:', output[0])
+#            n = 3
+#            for st in output[0][:n]:
+#                for ed in output[0][-n:]:
+#                    # st = output[0][0]
+#                    # ed = output[0][-1]
+#                    if ([st, ed] in dp) or ([ed, st] in dp):
+#                        print('st, ed:', st, ed)
+#                        print('Hamiltonian Cycle:', len(output[0]))
+#                        print('output[0]:', output[0])
+    
+    start = 50
+    end = 8
+    
+    output = get_bestHCHP(dp)
+    hc = output[1]
+    print('best hp:', output[0])
+    print('best hc:', output[1])
+    
+    ###基于HC的路径规划测试
+    p = get_path_with_hc_simple(al, hc, start, end)
+    print('hc path:', p)
+#    sys.exit(0)
 
         # TODO: if output[0][0] == output[0][-1]:   可以寻找 hamiltonian cycle
 
@@ -99,27 +136,30 @@ def main():
 
     # test get_path_with_hp(new_adl_, adl_, hp, start, end, use_networkx=False)#
     # 测试了三种情况下的工作情况，一切正常
-    print(get_path(adw, 58, 8, use_networkx=False))
-    p = get_path(adw, 58, 8, use_networkx=False)
+
+    print('\nget_path:', get_path(adw, start, end, use_networkx=False))
+    p = get_path(adw, start, end, use_networkx=False)
     rp = replan_for_hp(hp, p)
-    print('replan(hp, p):', rp)
-    # print(get_path_with_hp(new_ad, al, hp, 'HP', 8, use_networkx=False))
+    print('\nreplan(hp, p):', rp)
+    print('\nget_path_with_hp:', get_path_with_hp(new_ad, al, hp, start, end , use_networkx=False))
+    p = get_path_with_hp_simple(al, hp, start, end)
+    print('get_path_with_hp_simple:', p)
     # p = get_path_with_hp(new_ad, al, hp, 58, 8, use_networkx=False)
     # print(p)
 
     # exit(0)
-
+#    sys.exit(0)
 
 #################终极测试
     start_time = time.clock()
 
     # test function: get_all_cars_paths(adl_list, carIDL, startL, endL, use_networkx=True)
-    pa = get_all_paths_with_hp(al, road_df, car_df['id'], car_df['from'], car_df['to'])
+    pa = get_all_paths_with_hc(al, road_df, car_df['id'], car_df['from'], car_df['to'])
     end_time = time.clock()
     # print('all cars paths：', pa)
     print(len(pa))
     print('CPU cost time for path plan: ', end_time - start_time)
-
+    sys.exit(0)
     #####
 
     # adj_list_visualize(new_ad)
@@ -127,7 +167,8 @@ def main():
     # 基于hp的路径规划
     # p = get_path(new_ad, 6, 33, use_networkx=False)
     # print('shortest path is:', p)
-    exit(1)
+#    exit()
+#    sys.exit()
 
     # # hamiltonian path test
     # get_hamiltonian_path(adw, 1, 20)
@@ -155,6 +196,7 @@ def main():
     # print('all cars paths：', pa)
     print(len(pa))
     print('CPU cost time for path plan: ', end_time - start_time)
+    sys.exit()
 
     ###############################################
     # # 读数据
@@ -194,3 +236,18 @@ def main():
 
 if __name__ == '__main__':
     main()
+   
+#    ############### process test
+#    p = ProcessPoolExecutor()
+#    obj_l = []
+#    for i in range(4):
+#        obj = p.submit(get_bestHCHP, 60, 100)
+#        obj_l.append(obj)
+#    loop_time_elapsed = (time.clock() - loop_start_time)
+#    print([len(obj.result()) for obj in obj_l])
+##    a = get_bestHCHP(60, 400)
+##    print(len(a))
+#    # p.shutdown()  # 等同于p.close(),p.join()
+#    
+#    # print("Accuracy:", yes,"%")
+#    print("Time taken for 100 runs:", loop_time_elapsed)

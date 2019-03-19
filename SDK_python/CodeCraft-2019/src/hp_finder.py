@@ -64,6 +64,7 @@ class HamiltonianPath:
         # exit(0)
 
     def generatePathLink(self):
+        # generate adjacent list
         self.graphLink = {}
         for x in self.pairs:
             x = str(x)
@@ -96,44 +97,62 @@ class HamiltonianPath:
 
         tempNode = len(self.pairs)
         startNode = 0
-
-        for start in range(1, len(self.graphLink)):
-            if len(self.graphLink[start]) < tempNode:
-                tempNode = len(self.graphLink[start])
-                startNode = start
+        
+        ## ugly code using index to go through the dict
+#        for start in range(1, len(self.graphLink)):
+#            print('start:', start)
+#            print(self.graphLink[start])
+#            if len(self.graphLink[start]) < tempNode:
+#                
+#                tempNode = len(self.graphLink[start])
+#                startNode = start
+        
+        for key, value in (self.graphLink).items():
+            if len(value) < tempNode:
+                tempNode = len(value)
+                startNode = key
+        
 
         firstSolution.append(startNode)
         previousStartNode.append(startNode)
         firstSearch = self.greedySearch(firstSolution)
 
+        # firstSearch: (False, [9, 1])
+        # solutionList: [[x,x,x],[x,x,],...]
         if firstSearch[0] == False:
-            solutionList.append(firstSearch[1])
-
+            solutionList.append(firstSearch[1]) # [[9, 1]]
+            # 搜索次数设置
             for y in range(1, 101):
-                randomIndex = random.randint(0,len(solutionList)-1)
-                randomSolution = solutionList[randomIndex].copy()
-                randomPosition = random.randint(1,len(randomSolution)-1)
+                randomIndex = random.randint(0,len(solutionList)-1) # 0
+                randomSolution = solutionList[randomIndex].copy()  # [9, 1]
+                
+                randomPosition = random.randint(1,len(randomSolution)-1) # 1
                 randomNum = random.randint(1, 3)
  
+                # 随机策略 移除部分解
                 if randomNum == 1: #remove second half
-                    randomSolution = randomSolution[:randomPosition]
+                    randomSolution = randomSolution[:randomPosition] # 9
 
                 elif randomNum == 2: #remove first half
-                    randomSolution = randomSolution[randomPosition:]
+                    randomSolution = randomSolution[randomPosition:] # 1
 
                 else:
+                    # 重新选择起始搜索节点，randomSolution=[new node]
                     randomSolution = self.restartSearch()
 
+                # 继续贪心算法搜索
                 newSearch = self.greedySearch(randomSolution)
                 newSolution = newSearch[1]
 
                 if newSearch[0]:
+                    # 找到HP时直接break
                     newBestSolution = newSolution
                     break
 
                 if newSolution not in solutionList:
                     solutionList.append(newSolution)
-
+                
+                # 选择最长的作为最优替补解
                 newBestSolution = max(solutionList, key = len)
 
             if len(newBestSolution) == numOfNodes:
@@ -152,13 +171,15 @@ class HamiltonianPath:
 
     def isHamiltonianPathExist(self):
         time_start = time.clock()
+        # 生成邻接表
         self.generatePathLink()
         print("Finding Hamiltonian Paths...")
-        time.sleep(0.5)
-        # print("self.graphLink) != self.numOfNodes:", self.graphLink)
-        # print("self.graphLink) != self.numOfNodes:", self.numOfNodes)
+#        time.sleep(0.5)
+#        print("self.graphLink != self.numOfNodes:", (self.graphLink))
+#        print("self.graphLink != self.numOfNodes:", self.numOfNodes)
         # exit(0)
-
+        
+        # 如果邻接表的长度不等于节点的个数，则报错
         if len(self.graphLink) != self.numOfNodes:
             print("The graph is not connected.\nHence, there is no Hamiltoninan Paths.\n")
             time_elapsed = (time.clock() - time_start)
@@ -177,16 +198,28 @@ class HamiltonianPath:
         newLastNode = solution[-1]
         while True:
             lastNode = solution[-1]
+            
+            #从邻接表导入指向节点列表
             possibleNode = self.graphLink[lastNode]
             random.shuffle(possibleNode)
+            
+            #如果当前解的程度等于节点数，说明找到了HP
             if len(solution) == self.numOfNodes:
                 return (True, solution)
             else:
-                for x in range(0, len(possibleNode)):
-                    if possibleNode[x] not in solution:
-                        solution.append(possibleNode[x])
-                        newLastNode = possibleNode[x]
+                ## ugly code
+#                for x in range(0, len(possibleNode)):
+#                    if possibleNode[x] not in solution:
+#                        solution.append(possibleNode[x])
+#                        newLastNode = possibleNode[x]
+#                        break
+                for x in possibleNode:
+                    if x not in solution:
+                        solution.append(x)
+                        newLastNode = x
                         break
+                
+                # 针对双向对的情况，反向之后继续搜索
                 if lastNode == newLastNode:
                     solution.reverse()
                     while True:
@@ -196,19 +229,31 @@ class HamiltonianPath:
                         if len(solution) == self.numOfNodes:
                             return (True, solution)
                         else:
-                            for x in range(0, len(possibleNode)):
-                                if possibleNode[x] not in solution:
-                                    solution.append(possibleNode[x])
-                                    newLastNode = possibleNode[x]
-                                    break
+                            ## ugly code
+#                            for x in range(0, len(possibleNode)):
+#                                if possibleNode[x] not in solution:
+#                                    solution.append(possibleNode[x])
+#                                    newLastNode = possibleNode[x]
+#                                    break
+                            for x in possibleNode:
+                                if x not in solution:
+                                    solution.append(x)
+                                    newLastNode = x
+                                    break 
+                            
                             if lastNode == newLastNode:
                                 return (False, solution)
 
     def restartSearch(self):
-        randomStartNode = random.randint(1,self.numOfNodes)
+        # 从节点列表中重新选择起始搜索节点，返回[new_node]
+#        randomStartNode = random.randint(1,self.numOfNodes)
+        randomStartNode = random.choice(list((self.graphLink).keys()))
+        
         newSolution = []
         newSolution.append(randomStartNode)
         return newSolution
+    
+    
 
 numOfNodes = 60
 yes = 0

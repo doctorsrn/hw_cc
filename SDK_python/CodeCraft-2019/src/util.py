@@ -222,6 +222,50 @@ def get_node_from_pairs(pairs_):
     return nodes
 
 
+def __get_value_in_list(sl, start, end):
+    """
+    从列表中获取元素start, end之前的值
+    :param sl:单元素列表
+    :param start:
+    :param end:
+    :return:
+    """
+    if start not in sl or end not in sl:
+        raise Exception("Invalid input for start or end.")
+
+    sub_list = sl[sl.index(start):sl.index(end)]
+
+    if len(sub_list) == 0:
+        sl_reverse = sl[::-1]
+        sub_list = sl_reverse[sl_reverse.index(start):sl_reverse.index(end)]
+    # 记得加上尾元素
+    sub_list.append(end)
+
+    return sub_list
+
+
+def __get_value_in_cycle_list(cl, start, end):
+    """
+    cl列表中的元素首位相连构成环，获取环中任意两点间最短边的子列表
+    """
+    cycle_list = cl + cl
+    
+    # start
+    s_index = cycle_list.index(start)
+    
+    temp = cycle_list[s_index:(s_index+len(cl)+1)]
+    
+    path1 = __get_value_in_list(temp, start, end)
+    
+    temp.reverse()
+    path2 = __get_value_in_list(temp, start, end)
+    
+    if len(path1) < len(path2):
+        return path1
+    else:
+        return path2
+    
+    
 def adj_list_visualize(adl_list_):
     """
     brief: 将邻接表表征的有向图进行可视化
@@ -317,6 +361,63 @@ def cut_adjacency_list(adl_, road_df, cut_speed_level=0, cut_channel_level=0):
 def weight_func(road_l, road_mv):
     weight = road_l / road_mv
     return weight
+
+
+def get_bestHCHP(dp_pairs, searchNum=200, n=3, bestType=0):
+    """
+    从给定的双向对中获取最佳的HC和HP
+    :pairs: 双向对
+    :searchNum: 搜索次数设置
+    :n: n是从HP头尾搜索HC时搜索元素的个数
+    :bestType: 表示返回的HC和HP的最优类型，默认是确保HC是最优，同时将生成HC的HP作为最优,若HC不存在最优
+               bestType = 1: 表示返回的HP和HC均为最优，但是HP和HC没有从属关系
+    """
+    
+    nodes = get_node_from_pairs(dp_pairs)
+    graph = HamiltonianPath(len(nodes))
+    graph.pairs = dp_pairs
+    
+    # set initial length
+    hpLength = int(len(nodes) / 5)
+    hcLength = int(len(nodes) / 5)
+    
+    bestHP = []
+    bestHC = []
+    bestHCP = []
+    
+    for x in range(1,searchNum):
+        output = graph.isHamiltonianPathExist()
+        solution = output[0]
+        # if len(solution) == numOfNodes:
+        #     yes += 1
+        # else:
+        #     no += 1
+        
+        # 求得最优HP
+        if len(solution) > hpLength:
+                bestHP = solution
+                hpLength = len(solution) 
+        if len(solution) > hcLength:
+            # 搜索HC
+            for st in solution[:n]:
+                for ed in solution[-n:]:
+                    # st = output[0][0]
+                    # ed = output[0][-1]
+                    if ([st, ed] in dp_pairs) or ([ed, st] in dp_pairs):
+                        bestHCP = solution
+                        bestHC = __get_value_in_list(solution, st, ed)
+                        hcLength = len(bestHC)
+#          
+#                        print('st, ed:', st, ed)
+#                        print('Hamiltonian Cycle:', len(output[0]))
+#                        print('output[0]:', output[0])
+        else:
+            pass
+    
+    if 1 == bestType:
+        return [bestHP, bestHC]
+        
+    return [bestHCP, bestHC]
 
 
 def get_hamiltonian_path(adl_list_w, start, end, use_networkx=True):
@@ -468,26 +569,98 @@ def rebuild_adl_from_hp(adl_, dp_, sp_, rp_, hp):
     return new_adl
 
 
-def __get_value_in_list(sl, start, end):
+def get_path_with_hp_simple(adl_, hp, start, end, use_networkx=False):
     """
-    从列表中获取元素start, end之前的值
-    :param sl:单元素列表
-    :param start:
-    :param end:
+    直接使用重规划将dijkstra规划得到的路接入HP中
+    """
+    adl_list_w = convert_adl2adl_w(adl_)
+    
+    path_origin = shortest_path(adl_list_w, start, end)
+    
+    path = replan_for_hp(hp, path_origin)
+    
+    return path
+
+
+def get_path_with_hc_simple(adl_, hc, start, end, use_networkx=False):
+    """
+    直接使用重规划将dijkstra规划得到的路接入HC中
+    """
+    adl_list_w = convert_adl2adl_w(adl_)
+    
+    path_origin = shortest_path(adl_list_w, start, end)
+    
+    print('origin path:', path_origin)
+    
+    path = replan_for_hc(hc, path_origin)
+    
+    return path
+
+
+def replan_for_hc(hc, path_origin_):
+    """
+    将dijkstra规划出来的path_origin_接入HC
+    :param hc:
+    :param path_origin:
     :return:
     """
-    if start not in sl or end not in sl:
-        raise Exception("Invalid input for start or end.")
 
-    sub_list = sl[sl.index(start):sl.index(end)]
+    # print(hp, path_)
+    for a in path_origin_:
+        if a in hc:
+            lf = a
+            lf_index = path_origin_.index(a)
+            break
+        else:
+            lf_index = 0
 
-    if len(sub_list) == 0:
-        sl_reverse = sl[::-1]
-        sub_list = sl_reverse[sl_reverse.index(start):sl_reverse.index(end)]
-    sub_list.append(end)
+    for b in path_origin_[::-1]:
+        if b in hc:
+            rt = b
+            rt_index = path_origin_.index(b)
+            break
+        else: 
+            rt_index = 0
 
-    return sub_list
+    # print(lf_index,rt_index,lf,rt)
+    
+    # 如果满足替换条换条件则替换
+    if lf_index < rt_index:
+        path_origin_ = path_origin_[:lf_index] + __get_value_in_cycle_list(hc, lf, rt) + path_origin_[rt_index+1:]
 
+    return path_origin_
+
+
+def get_all_paths_with_hc(adl_list, road_df, carIDL, startL, endL, use_networkx=False):
+
+    paths = {}
+    adl_list_w = convert_adl2adl_w(adl_list)
+
+    # 剪枝
+    dp, sp, rp = cut_adjacency_list(adl_list, road_df, cut_channel_level=1, cut_speed_level=1)
+    
+
+    # 基于get_path_with_hp()函数进行路径规划
+    # 为所有车各规划一条最短路径
+    for carID, st, ed in zip(carIDL, startL, endL):
+        try:
+#            path_n = get_path_with_hp(new_ad, adl_list, hp, st, ed)
+#            path_n = get_path_with_hp_simple(adl_list, hp, st, ed)
+            path_n = get_path_with_hc_simple(adl_list, hc, st, ed)
+        except:
+            # print("hp", hp)
+            # print("error:st, ed", st, ed)
+            path_n = shortest_path(adl_list_w, st, ed)
+#            path_n = replan_for_hc(hc, path_n)
+
+        # 将规划得到的节点构成的路径转换为边构成的路径
+        path_e = get_path_n2e(path_n, adl_list)
+
+        paths[carID] = path_e
+
+    return paths
+   
+    
 
 def get_path_with_hp(new_adl_, adl_, hp, start, end, use_networkx=False):
     """
@@ -675,26 +848,13 @@ def get_path_with_hp(new_adl_, adl_, hp, start, end, use_networkx=False):
             return path_t
 
 
-def get_path_with_hp_simple(adl_, hp, start, end, use_networkx=False):
-    """
-    直接使用重规划将dijkstra规划得到的路接入HP中
-    """
-    adl_list_w = convert_adl2adl_w(adl_)
-
-    path_origin = shortest_path(adl_list_w, start, end)
-
-    path = replan_for_hp(hp, path_origin)
-
-    return path
-
-
 def get_all_paths_with_hp(adl_list, road_df, carIDL, startL, endL, use_networkx=False):
 
     paths = {}
     adl_list_w = convert_adl2adl_w(adl_list)
 
     # 剪枝
-    dp, sp, rp = cut_adjacency_list(adl_list, road_df, cut_channel_level=0, cut_speed_level=1)
+    dp, sp, rp = cut_adjacency_list(adl_list, road_df, cut_channel_level=1, cut_speed_level=1)
 
     # 搜索较优的hamiltonian path
     nodes = get_node_from_pairs(dp)
@@ -733,7 +893,7 @@ def get_all_paths_with_hp(adl_list, road_df, carIDL, startL, endL, use_networkx=
     # 为所有车各规划一条最短路径
     for carID, st, ed in zip(carIDL, startL, endL):
         try:
-            # path_n = get_path_with_hp(new_ad, adl_list, hp, st, ed)
+#            path_n = get_path_with_hp(new_ad, adl_list, hp, st, ed)
             path_n = get_path_with_hp_simple(adl_list, hp, st, ed)
         except:
             # print("hp", hp)
@@ -762,12 +922,16 @@ def replan_for_hp(hp, path_):
             lf = a
             lf_index = path_.index(a)
             break
+        else:
+            lf_index = 0
 
     for b in path_[::-1]:
         if b in hp:
             rt = b
             rt_index = path_.index(b)
             break
+        else: 
+            rt_index = 0
 
     # print(lf_index,rt_index,lf,rt)
     if lf_index < rt_index:
@@ -973,9 +1137,6 @@ def get_time_plan2(car_df):
 
     return time_plans
 
-def get_time_plan4(car_df):
-    pass
-
 
 def get_answer(car_list, path_plan, time_plan):
     """
@@ -990,9 +1151,11 @@ def get_answer(car_list, path_plan, time_plan):
         answer.append(time_plan[carID] + path_plan[carID])
 
     return answer
+ 
 
-
-# if __name__ == "__main__":
+if __name__ == "__main__":
+    print(__get_value_in_cycle_list([1,2,4,5,7,9], 7, 1))
+    print(__get_value_in_list([1,2,4,5,7,9], 1, 7))
 #     al = {1: {2: [5000, 2.0], 7: [5005, 2.0]}, 2: {8: [5006, 2.0], 1: [5000, 2.0], 3: [5001, 2.0]}, 3: {9: [5007, 2.0], 2: [5001, 2.0], 4: [5002, 2.0]}, 4: {10: [5008, 2.0], 3: [5002, 2.0], 5: [5003, 2.0]}, 5: {11: [5009, 2.0], 4: [5003, 2.0], 6: [5004, 2.0]}, 6: {12: [5010, 2.0], 5: [5004, 2.0]}, 7: {8: [5011, 2.0], 1: [5005, 2.0], 13: [5016, 2.0]}, 8: {9: [5012, 2.0], 2: [5006, 2.0], 14: [5017, 2.0], 7: [5011, 2.0]}, 9: {8: [5012, 2.0], 10: [5013, 2.0], 3: [5007, 2.0], 15: [5018, 2.0]}, 10: {16: [5019, 2.0], 9: [5013, 2.0], 11: [5014, 2.0], 4: [5008, 2.0]}, 11: {17: [5020, 2.0], 10: [5014, 2.0], 12: [5015, 2.0], 5: [5009, 2.0]}, 12: {18: [5021, 2.0], 11: [5015, 2.0], 6: [5010, 2.0]}, 13: {19: [5027, 2.0], 14: [5022, 2.0], 7: [5016, 2.0]}, 14: {8: [5017, 2.0], 20: [5028, 2.0], 13: [5022, 2.0], 15: [5023, 2.0]}, 15: {16: [5024, 2.0], 9: [5018, 2.0], 21: [5029, 2.0], 14: [5023, 2.0]}, 16: {17: [5025, 2.0], 10: [5019, 2.0], 22: [5030, 2.0], 15: [5024, 2.0]}, 17: {16: [5025, 2.0], 18: [5026, 2.0], 11: [5020, 2.0], 23: [5031, 2.0]}, 18: {24: [5032, 2.0], 17: [5026, 2.0], 12: [5021, 2.0]}, 19: {25: [5038, 2.0], 20: [5033, 2.0], 13: [5027, 2.0]}, 20: {26: [5039, 2.0], 19: [5033, 2.0], 21: [5034, 2.0], 14: [5028, 2.0]}, 21: {27: [5040, 2.0], 20: [5034, 2.0], 22: [5035, 2.0], 15: [5029, 2.0]}, 22: {16: [5030, 2.0], 28: [5041, 2.0], 21: [5035, 2.0], 23: [5036, 2.0]}, 23: {24: [5037, 2.0], 17: [5031, 2.0], 29: [5042, 2.0], 22: [5036, 2.0]}, 24: {18: [5032, 2.0], 30: [5043, 2.0], 23: [5037, 2.0]}, 25: {26: [5044, 2.0], 19: [5038, 2.0], 31: [5049, 2.0]}, 26: {32: [5050, 2.0], 25: [5044, 2.0], 27: [5045, 2.0], 20: [5039, 2.0]}, 27: {33: [5051, 2.0], 26: [5045, 2.0], 28: [5046, 2.0], 21: [5040, 2.0]}, 28: {34: [5052, 2.0], 27: [5046, 2.0], 29: [5047, 2.0], 22: [5041, 2.0]}, 29: {35: [5053, 2.0], 28: [5047, 2.0], 30: [5048, 2.0], 23: [5042, 2.0]}, 30: {24: [5043, 2.0], 36: [5054, 2.0], 29: [5048, 2.0]}, 31: {32: [5055, 2.0], 25: [5049, 2.0]}, 32: {33: [5056, 2.0], 26: [5050, 2.0], 31: [5055, 2.0]}, 33: {32: [5056, 2.0], 34: [5057, 2.0], 27: [5051, 2.0]}, 34: {33: [5057, 2.0], 35: [5058, 2.0], 28: [5052, 2.0]}, 35: {34: [5058, 2.0], 36: [5059, 2.0], 29: [5053, 2.0]}, 36: {35: [5059, 2.0], 30: [5054, 2.0]}}
 #     pn = [1, 7, 13, 19, 20]
 #     pe = get_path_n2e(pn, al)
