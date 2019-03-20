@@ -169,3 +169,4 @@ plt.xlabel('distance')
 plt.ylabel('Commute Time')
 plt.grid(axis='y', alpha=0.75)
 
+plt.show()
