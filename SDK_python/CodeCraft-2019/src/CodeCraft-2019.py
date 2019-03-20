@@ -58,7 +58,8 @@ def main():
     # get path plans
     # paths = get_all_cars_paths(ad_l, car_df['id'], car_df['from'], car_df['to'], use_networkx=False)
 
-    paths = get_all_paths_with_hc(ad_l, road_df, car_df['id'], car_df['from'], car_df['to'])
+    # paths = get_all_paths_with_hc(ad_l, road_df, car_df['id'], car_df['from'], car_df['to'])
+    paths = get_all_paths_with_weight_update(ad_l, road_df, car_df, update_w=False)
 
     # ##############
     # # debug

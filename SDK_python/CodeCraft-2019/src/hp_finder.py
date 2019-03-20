@@ -123,10 +123,14 @@ class HamiltonianPath:
             solutionList.append(firstSearch[1]) # [[9, 1]]
             # 搜索次数设置
             for y in range(1, 101):
-                randomIndex = random.randint(0,len(solutionList)-1) # 0
+                randomIndex = random.randint(0, len(solutionList)-1) # 0
                 randomSolution = solutionList[randomIndex].copy()  # [9, 1]
-                
-                randomPosition = random.randint(1,len(randomSolution)-1) # 1
+
+                if len(randomSolution) < 2:
+                    continue
+                # TODO 此处可能出现bug，有待验证
+
+                randomPosition = random.randint(1, len(randomSolution)-1) # 1
                 randomNum = random.randint(1, 3)
  
                 # 随机策略 移除部分解

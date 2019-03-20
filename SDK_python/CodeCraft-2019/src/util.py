@@ -39,6 +39,7 @@ edge path: [5005, 5016, 5027, 5033]
 # import numpy as np
 # import  pandas
 import copy
+from queue import Queue
 import matplotlib.pyplot as plt
 from dijkstra.dijkstra import shortest_path
 
@@ -70,6 +71,14 @@ def build_adjacency_list(cross_df, road_df):
     """
     # 带有边ID的邻接表结构： 使用嵌套字典：{节点：{相邻节点1：[边ID，边权重], 相邻节点2：[边ID，边权重], '''}}
     adjacency_list = {}
+    # 计算一些重要的道路统计信息
+    # pandas.series.mean() 求均值
+    # pandas.series.max()  求最大值
+    channel_max = road_df['channel'].max()  # 求最大车道数
+    road_df['time'] = road_df.apply(lambda x: (x['length'] / x['speed']), axis=1)
+    time_cost_max = road_df['time'].max()  # 求所有路长度除以速度的最大值
+    time_cost_mean = road_df['time'].mean()  # 求所有路长度除以速度的均值
+
     # weight = 0
     # next_cross_id = 0
 
@@ -87,7 +96,11 @@ def build_adjacency_list(cross_df, road_df):
                 if (next_cross_id == cross_id) and (road_df['isDuplex'][road] == 1):
                     next_cross_id = road_df['from'][road]
                 # 设置该条边的权重
-                weight = weight_func(road_df['length'][road], road_df['speed'][road])
+                # weight = weight_func(road_df['length'][road], road_df['speed'][road])
+                weight = weight_func(road_df['time'][road],
+                                     road_df['channel'][road],
+                                     cha_max=channel_max,
+                                     t_mean=time_cost_mean)
 
                 # 将数据存入嵌套字典
                 if adjacency_list.__contains__(cross_id):
@@ -107,6 +120,14 @@ def build_ad_list_without_edge_id(cross_df, road_df):
     """
     # 不带边ID的邻接表结构： 使用嵌套字典：{节点：{相邻节点1：边权重, 相邻节点2：边权重, '''}}
     ad_list_without_edge_id = {}
+
+    # 计算一些重要的道路统计信息
+    # pandas.series.mean() 求均值
+    # pandas.series.max()  求最大值
+    channel_max = road_df['channel'].max()  # 求最大车道数
+    road_df['time'] = road_df.apply(lambda x: (x['length'] / x['speed']), axis=1)
+    time_cost_max = road_df['time'].max()  # 求所有路长度除以速度的最大值
+    time_cost_mean = road_df['time'].mean()  # 求所有路长度除以速度的均值
     # weight = 0
     # next_cross_id = 0
 
@@ -124,7 +145,11 @@ def build_ad_list_without_edge_id(cross_df, road_df):
                 if (next_cross_id == cross_id) and (road_df['isDuplex'][road] == 1):
                     next_cross_id = road_df['from'][road]
                 # 设置该条边的权重
-                weight = weight_func(road_df['length'][road], road_df['speed'][road])
+                # weight = weight_func(road_df['length'][road], road_df['speed'][road])
+                weight = weight_func(road_df['time'][road],
+                                     road_df['channel'][road],
+                                     cha_max=channel_max,
+                                     t_mean=time_cost_mean)
 
                 # 将数据存入嵌套字典
                 if ad_list_without_edge_id.__contains__(cross_id):
@@ -285,7 +310,7 @@ def adj_list_visualize(adl_list_):
     # nx.draw_networkx_labels(G, pos, font_size=20, font_family='sans-serif')
     nx.draw(G, pos, with_labels=True)
     plt.show()
-    return
+    return 1
 
 
 def cut_adjacency_list(adl_, road_df, cut_speed_level=0, cut_channel_level=0):
@@ -358,9 +383,55 @@ def cut_adjacency_list(adl_, road_df, cut_speed_level=0, cut_channel_level=0):
 
 
 # TODO: 权重函数还没有进行科学设置
-def weight_func(road_l, road_mv):
-    weight = road_l / road_mv
+def weight_func(time_cost, cha, cha_max=8, t_mean=3, la1=1, la2=0.5):
+    """
+    time_cost: Length / speed
+    cha_max: 最大车道数
+    t_mean:  Length / speed的均值
+    t_max: Length / speed的最大值
+    weight: weight的预计范围为[0.1, t_max]
+    """
+    weight = la1 * time_cost + la2 * (- cha / cha_max * t_mean)
+
+    # 设置weight的下界为0.1
+    if weight <= 0:
+        weight = 0.1
     return weight
+
+
+def update_weight(adwE_, path_n_, typeU=0, weight_factor=0.05):
+    """
+    根据道路使用情况实时更新道路权重，边使用次数为设边使用次数为N，则对该条边的权重影响为：
+          weight = weight + N * 0.05
+    adwE_ :不带边ID的邻接表
+    path_n_:规划出来的路径,由节点构成
+    typeU :更新权重的类型， =0表示将当前path累加到之前的权重
+                         =1表示将当前的path从之前的权重中去除
+    weight_factor: 表示一条路在路径中出现一次对该路权重的影响因子，通过估计每条路车辆承载量
+                   和weight原始范围[0.1, T_mean]来决定weight_factor的取值
+    """
+
+    # 根据path累加权重
+    if typeU == 0:
+        for node, next_node in zip(path_n_[:-1], path_n_[1:]):
+            if adwE_.__contains__(node):
+                adwE_[node][next_node] += weight_factor
+            else:
+                raise Exception("the adwE not correct")
+    elif typeU == 1:
+        for node, next_node in zip(path_n_[:-1], path_n_[1:]):
+            if adwE_.__contains__(node):
+                adwE_[node][next_node] -= weight_factor
+
+                # 限定weight的下界
+                if adwE_[node][next_node] <= 0:
+                    adwE_[node][next_node] = 0.1
+            else:
+                raise Exception("the adwE not correct")
+    else:
+        raise Exception("wrong typeU for update weight")
+
+    return adwE_
 
 
 def get_bestHCHP(dp_pairs, searchNum=200, n=3, bestType=0):
@@ -582,30 +653,35 @@ def get_path_with_hp_simple(adl_, hp, start, end, use_networkx=False):
     return path
 
 
-def get_path_with_hc_simple(adl_, hc, start, end, use_networkx=False):
+def get_path_with_hc_simple(adwE_, hc, start, end, use_networkx=False):
     """
     直接使用重规划将dijkstra规划得到的路接入HC中
     """
-    adl_list_w = convert_adl2adl_w(adl_)
-    
-    path_origin = shortest_path(adl_list_w, start, end)
-    
-    print('origin path:', path_origin)
-    
+    #    adl_list_w = convert_adl2adl_w(adl_)
+
+    path_origin = shortest_path(adwE_, start, end)
+
+    #    print('origin path:', path_origin)
+
     path = replan_for_hc(hc, path_origin)
-    
+
     return path
 
 
 def replan_for_hc(hc, path_origin_):
     """
     将dijkstra规划出来的path_origin_接入HC
+    :param path_origin_:
     :param hc:
     :param path_origin:
     :return:
     """
 
     # print(hp, path_)
+    rt_index = 0
+    lf_index = 0
+    lf = 0
+    rt = 0
     for a in path_origin_:
         if a in hc:
             lf = a
@@ -637,7 +713,7 @@ def get_all_paths_with_hc(adl_list, road_df, carIDL, startL, endL, use_networkx=
     adl_list_w = convert_adl2adl_w(adl_list)
 
     # 剪枝
-    dp, sp, rp = cut_adjacency_list(adl_list, road_df, cut_channel_level=1, cut_speed_level=1)
+    dp, sp, rp = cut_adjacency_list(adl_list, road_df, cut_channel_level=0, cut_speed_level=1)
     
     _, hc = get_bestHCHP(dp)
 
@@ -660,8 +736,98 @@ def get_all_paths_with_hc(adl_list, road_df, carIDL, startL, endL, use_networkx=
         paths[carID] = path_e
 
     return paths
-   
-    
+
+
+def get_all_paths_with_weight_update(adl_list, road_df, car_df, pathType=0, update_w=True, use_networkx=False):
+    """
+    路劲规划时，权重实时更新
+    adl_list: 原始邻接表
+    road_df： road dateframe
+    car_df： car dateframe
+    pathType： 路径规划的方法:  =0: 基于HC
+                             =1: 基于HP
+                             =2: 基于原始Dijkstra算法
+    """
+    paths = {}
+    adl_list_w = convert_adl2adl_w(adl_list)
+
+    # 剪枝
+    dp, sp, rp = cut_adjacency_list(adl_list, road_df, cut_channel_level=0, cut_speed_level=1)
+
+    _, hc = get_bestHCHP(dp)
+
+    # 根据每辆车的计划出发时间进行升序排列
+    car_df_sort = car_df.sort_values(by='planTime', axis=0, ascending=True)
+    car_len = len(car_df_sort['id'])
+
+    ## 为了更新权重使用的一些参数和变量
+    pathQueue = Queue()
+    i = 0
+    startFlag = 0
+
+    # 为所有车各规划一条最短路径
+    for carID, st, ed in zip(car_df_sort['id'], car_df_sort['from'], car_df_sort['to']):
+
+        i += 1
+
+        if pathType == 0:  # 基于HC
+            try:
+                #                path_n = get_path_with_hp(new_ad, adl_list, hp, st, ed)
+                #                path_n = get_path_with_hp_simple(adl_list, hp, st, ed)
+                path_n = get_path_with_hc_simple(adl_list_w, hc, st, ed)
+
+            except:
+                # print("hp", hp)
+                # print("error:st, ed", st, ed)
+                path_n = shortest_path(adl_list_w, st, ed)
+                path_n = replan_for_hc(hc, path_n)
+
+            finally:
+                if update_w:
+                    # 更新权重操作
+                    # 首先是权重累积
+                    adl_list_w = update_weight(adl_list_w, path_n, typeU=0)
+                    # 将累加过的路径添加至队列中。消减权重时使用
+                    pathQueue.put(path_n)
+
+                    # 然后是权重消减，表示当前车已经行驶玩这条路径，所以要释放这条路
+                    # TODO: 设置合理的开始消减权重的条件，当前设置为第100辆车之后开始消减
+                    if i > 100 or startFlag:
+                        startFlag = 1
+                        if not pathQueue.empty():
+                            # 从路径队列中取出路径，消减该路径在在权重中的影响
+                            path_out = pathQueue.get()
+                            adl_list_w = update_weight(adl_list_w, path_out, typeU=1)
+        elif pathType == 1:  # 基于HC
+            raise Exception("not finish")
+            pass
+
+        elif pathType == 2:  # 基于Dijkstra
+            path_n = shortest_path(adl_list_w, st, ed)
+
+            # 更新权重操作
+            # 首先是权重累积
+            if update_w:
+                adl_list_w = update_weight(adl_list_w, path_n, typeU=0)
+                # 将累加过的路径添加至队列中。消减权重时使用
+                pathQueue.put(path_n)
+
+                # 然后是权重消减，表示当前车已经行驶玩这条路径，所以要释放这条路
+                # TODO: 设置合理的开始消减权重的条件，当前设置为第100辆车之后开始消减
+                if i > 100 or startFlag:
+                    startFlag = 1
+                    if not pathQueue.empty():
+                        # 从路径队列中取出路径，消减该路径在在权重中的影响
+                        path_out = pathQueue.get()
+                        adl_list_w = update_weight(adl_list_w, path_out, typeU=1)
+
+        # 将规划得到的节点构成的路径转换为边构成的路径
+        path_e = get_path_n2e(path_n, adl_list)
+
+        paths[carID] = path_e
+
+    return paths
+
 
 def get_path_with_hp(new_adl_, adl_, hp, start, end, use_networkx=False):
     """

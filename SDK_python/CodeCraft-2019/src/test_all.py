@@ -116,7 +116,7 @@ def main():
     print('best hc:', output[1])
     
     ###基于HC的路径规划测试
-    p = get_path_with_hc_simple(al, hc, start, end)
+    p = get_path_with_hc_simple(adw, hc, start, end)
     print('hc path:', p)
 #    sys.exit(0)
 
@@ -141,7 +141,9 @@ def main():
     p = get_path(adw, start, end, use_networkx=False)
     rp = replan_for_hp(hp, p)
     print('\nreplan(hp, p):', rp)
-    print('\nget_path_with_hp:', get_path_with_hp(new_ad, al, hp, start, end , use_networkx=False))
+
+#TODO: 下面这条命令在windows下不会报错，但是在ubunut 下就会报错
+    # print('\nget_path_with_hp:', get_path_with_hp(new_ad, al, hp, start, end , use_networkx=False))
     p = get_path_with_hp_simple(al, hp, start, end)
     print('get_path_with_hp_simple:', p)
     # p = get_path_with_hp(new_ad, al, hp, 58, 8, use_networkx=False)
@@ -154,11 +156,16 @@ def main():
     start_time = time.clock()
 
     # test function: get_all_cars_paths(adl_list, carIDL, startL, endL, use_networkx=True)
-    pa = get_all_paths_with_hc(al, road_df, car_df['id'], car_df['from'], car_df['to'])
+#    pa = get_all_paths_with_hc(al, road_df, car_df['id'], car_df['from'], car_df['to'])
+    
+    # test get_all_paths_with_weight_update(adl_list, road_df, car_df, pathType=0, use_networkx=False):
+    pa = get_all_paths_with_weight_update(al, road_df, car_df)
+    
     end_time = time.clock()
     # print('all cars paths：', pa)
     print(len(pa))
     print('CPU cost time for path plan: ', end_time - start_time)
+    print(pa)
     sys.exit(0)
     #####
 
@@ -190,12 +197,15 @@ def main():
     start_time = time.clock()
 
     # test function: get_all_cars_paths(adl_list, carIDL, startL, endL, use_networkx=True)
-    pa = get_all_cars_paths(al, df2['id'], df2['from'], df2['to'], use_networkx=False)
+#    pa = get_all_cars_paths(al, df2['id'], df2['from'], df2['to'], use_networkx=False)
+    
+
 
     end_time = time.clock()
     # print('all cars paths：', pa)
     print(len(pa))
     print('CPU cost time for path plan: ', end_time - start_time)
+
     sys.exit()
 
     ###############################################
