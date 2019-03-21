@@ -34,8 +34,6 @@ def main():
     # car_path = rpath + '/car.txt'
     # answer_path = rpath + '/answer.txt'
 
-
-    #
     # logging.info("car_path is %s" % (car_path))
     # logging.info("road_path is %s" % (road_path))
     # logging.info("cross_path is %s" % (cross_path))
@@ -54,26 +52,23 @@ def main():
 
     # build adjacency list
     ad_l = build_adjacency_list(cross_df, road_df)
+    # ad_l = build_adjacency_list2(cross_df, road_df)
+
+    # # get time plans
+    # # 效果最好的是get_time_plan6
+    # time_plans, car_df_actual = get_time_plan6(car_df)
 
     # get path plans
+    # 效果最好的是 get_all_paths_with_hc_cw
     # paths = get_all_cars_paths(ad_l, car_df['id'], car_df['from'], car_df['to'], use_networkx=False)
-
     # paths = get_all_paths_with_hc(ad_l, road_df, car_df['id'], car_df['from'], car_df['to'])
     paths = get_all_paths_with_weight_update(ad_l, road_df, car_df, update_w=False)
+    # paths = get_allcarspaths_floyd(ad_l, car_df)
+    # paths = get_all_cars_paths(ad_l, car_df['id'], car_df['from'], car_df['to'], use_networkx=False)
+    # paths = get_all_cars_paths_cw(ad_l, car_df, use_networkx=False)
+    # paths = get_all_paths_with_hc(ad_l, road_df, car_df['id'], car_df['from'], car_df['to'])
+    # paths = get_all_paths_with_hc_cw(ad_l, road_df, car_df_actual)
 
-    # ##############
-    # # debug
-    #
-    # adl_w = build_ad_list_without_edge_id(cross_df, road_df)
-    # p = get_path(adl_w, 6, 50, use_networkx=False)
-    # pe = get_path_n2e(p, ad_l)
-    # print('p',p)
-    # print('pe', pe)
-    # print(ad_l)
-    # adj_list_visualize(ad_l)
-    # # os.system('pause')
-    # #
-    # ###############
 
     # get time plans
     time_plans = get_time_plan0(car_df)
