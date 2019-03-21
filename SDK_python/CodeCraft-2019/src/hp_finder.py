@@ -1,8 +1,9 @@
-import random,time
+import random, time
+
 
 class HamiltonianPath:
 
-    def __init__(self,numOfNodes):
+    def __init__(self, numOfNodes):
         if numOfNodes > 0:
             self.numOfNodes = numOfNodes
         else:
@@ -22,7 +23,7 @@ class HamiltonianPath:
         self.formHP()
 
         self.hamiltonianPairs = []
-        for x in range (len(self.hamiltonianPath)-1):
+        for x in range(len(self.hamiltonianPath)-1):
             pair = (self.hamiltonianPath[x], self.hamiltonianPath[x+1])
             self.hamiltonianPairs.append(pair)
         
@@ -35,7 +36,7 @@ class HamiltonianPath:
         # print('self.pairs', self.pairs)
         # exit(0)
 
-    def generatePairs(self, pairs = []):
+    def generatePairs(self, pairs=[]):
         self.calculateMaxPairs()
         self.pairs = pairs
         if self.numOfNodes >= 10:
@@ -89,7 +90,6 @@ class HamiltonianPath:
 
         # print("Graph linkage:", self.graphLink)
 
-
     def grasp(self):
         solutionList = []
         firstSolution = []
@@ -111,7 +111,6 @@ class HamiltonianPath:
             if len(value) < tempNode:
                 tempNode = len(value)
                 startNode = key
-        
 
         firstSolution.append(startNode)
         previousStartNode.append(startNode)
@@ -134,10 +133,10 @@ class HamiltonianPath:
                 randomNum = random.randint(1, 3)
  
                 # 随机策略 移除部分解
-                if randomNum == 1: #remove second half
+                if randomNum == 1:  # remove second half
                     randomSolution = randomSolution[:randomPosition] # 9
 
-                elif randomNum == 2: #remove first half
+                elif randomNum == 2:  # remove first half
                     randomSolution = randomSolution[randomPosition:] # 1
 
                 else:
@@ -160,24 +159,24 @@ class HamiltonianPath:
                 newBestSolution = max(solutionList, key = len)
 
             if len(newBestSolution) == numOfNodes:
-                print("\nHamiltonian Path Found!\nHP:", newBestSolution)
+                # print("\nHamiltonian Path Found!\nHP:", newBestSolution)
                 return [True,newBestSolution]
 
             else:
                 # print("\nBest Solution Found:", newBestSolution)
                 # print("\nLength of path:", len(newBestSolution))
                 # print("\nLength of solution list:",len(solutionList))
-                return [False,newBestSolution]
+                return [False, newBestSolution]
 
         else:
-            print("\nHamiltonian Path Found!\nHP:", firstSearch[1])
-            return [True,firstSearch[1]]
+            # print("\nHamiltonian Path Found!\nHP:", firstSearch[1])
+            return [True, firstSearch[1]]
 
     def isHamiltonianPathExist(self):
         time_start = time.clock()
         # 生成邻接表
         self.generatePathLink()
-        print("Finding Hamiltonian Paths...")
+        # print("Finding Hamiltonian Paths...")
 #        time.sleep(0.5)
 #        print("self.graphLink != self.numOfNodes:", (self.graphLink))
 #        print("self.graphLink != self.numOfNodes:", self.numOfNodes)
@@ -203,11 +202,11 @@ class HamiltonianPath:
         while True:
             lastNode = solution[-1]
             
-            #从邻接表导入指向节点列表
+            # 从邻接表导入指向节点列表
             possibleNode = self.graphLink[lastNode]
             random.shuffle(possibleNode)
             
-            #如果当前解的程度等于节点数，说明找到了HP
+            # 如果当前解的程度等于节点数，说明找到了HP
             if len(solution) == self.numOfNodes:
                 return (True, solution)
             else:

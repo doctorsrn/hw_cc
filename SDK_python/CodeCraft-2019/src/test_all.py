@@ -112,9 +112,22 @@ def main():
     
     output = get_bestHCHP(dp)
     hc = output[1]
-    print('best hp:', output[0])
+    # print('best hp:', output[0])
     print('best hc:', output[1])
+    print('best hc straight num:', get_straight_num(hc, al, cross_df))
     
+    ###基于HC的路径规划测试
+    p = get_path_with_hc_simple(adw, hc, start, end)
+    print('hc path:', p)
+
+
+    ## get_bestHCHP_with_direction
+    output = get_bestHCHP_with_direction(dp, al, cross_df)
+    hc = output[1]
+
+    print('best hc with direction:', output[1])
+    print('best hc straight num:', get_straight_num(hc, al, cross_df))
+
     ###基于HC的路径规划测试
     p = get_path_with_hc_simple(adw, hc, start, end)
     print('hc path:', p)
@@ -165,7 +178,7 @@ def main():
     # print('all cars paths：', pa)
     print(len(pa))
     print('CPU cost time for path plan: ', end_time - start_time)
-    print(pa)
+    # print(pa)
     sys.exit(0)
     #####
 

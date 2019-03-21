@@ -41,13 +41,18 @@ edge path: [5005, 5016, 5027, 5033]
 import copy
 from queue import Queue
 import matplotlib.pyplot as plt
+import numpy as np
+
 from dijkstra.dijkstra import shortest_path
 
 # import public_transport
 # import simulated_annealing
 
-from hp_finder import HamiltonianPath
+from utilzp import *
+from floyd import *
 
+from hp_finder import HamiltonianPath
+from tqdm import tqdm
 
 try:
     global USE_NETWORKX
@@ -237,6 +242,11 @@ def get_path_n2e(path_n, ad_list):
 
 
 def get_node_from_pairs(pairs_):
+    """
+    从节点对里找出所有节点
+    :param pairs_:
+    :return:
+    """
     nodes = []
     for p in pairs_:
         if p[0] not in nodes:
@@ -310,7 +320,7 @@ def adj_list_visualize(adl_list_):
     # nx.draw_networkx_labels(G, pos, font_size=20, font_family='sans-serif')
     nx.draw(G, pos, with_labels=True)
     plt.show()
-    return 1
+    return G
 
 
 def cut_adjacency_list(adl_, road_df, cut_speed_level=0, cut_channel_level=0):
@@ -382,7 +392,10 @@ def cut_adjacency_list(adl_, road_df, cut_speed_level=0, cut_channel_level=0):
     return d_connect_pairs, s_connect_pairs, rest_pairs
 
 
-# TODO: 权重函数还没有进行科学设置
+# # TODO: 权重函数还没有进行科学设置
+# def weight_func(road_l, road_mv):
+#     weight = road_l / road_mv
+#     return weight
 def weight_func(time_cost, cha, cha_max=8, t_mean=3, la1=1, la2=0.5):
     """
     time_cost: Length / speed
@@ -456,7 +469,7 @@ def get_bestHCHP(dp_pairs, searchNum=200, n=3, bestType=0):
     bestHC = []
     bestHCP = []
     
-    for x in range(1,searchNum):
+    for x in tqdm(range(1, searchNum)):
         output = graph.isHamiltonianPathExist()
         solution = output[0]
         # if len(solution) == numOfNodes:
@@ -491,35 +504,138 @@ def get_bestHCHP(dp_pairs, searchNum=200, n=3, bestType=0):
     return [bestHCP, bestHC]
 
 
-def get_hamiltonian_path(adl_list_w, start, end, use_networkx=True):
+def __isGoStraight(nodeL, adl_list, cross_df):
     """
-    brief: 给定起点和终点，从邻接表中搜索得到一条可行路径，满足最优条件
-    :param adl_list_w: 不带边ID的邻接表
-    :param start:
-    :param end:
-    :param use_networkx: 默认根据networkx库导入情况决定使用那种方法获取路径
-    :return:
+    判断当前节点构成的路线是否是直行通道
+    nodeL: 节点列表[pre_node, node, next_node]
+    adl_list: 带边ID的邻接表
+    road_df: road dataframe
     """
-    global USE_NETWORKX
-    if USE_NETWORKX and use_networkx:
-        G = nx.DiGraph()
-        for st in adl_list_w.keys():
-            for to in adl_list_w[st].keys():
-                G.add_edge(st, to, weight=(adl_list_w[st][to]))
+    if len(nodeL) != 3:
+        raise Exception("Input wrong node list.")
+    road = adl_list[nodeL[0]][nodeL[1]][0]  # 得到上一节点和当前节点之间的路
+    road_next = adl_list[nodeL[1]][nodeL[2]][0]  # 得到当前节点和下一节点之间的路
 
-        # path = nx.algorithms.shortest_path(G, start, end)
-        path = []
-        print(tournament.is_tournament(G))
-        print(tournament.hamiltonian_path(G))
-        # x = cycles.simple_cycles(G)
-        # print(x)
-        # y = cycles.find_cycle(G)
-        # print(y)
+    # 得到node节点周围四条路的ID
+    roads = list(cross_df.loc[nodeL[1]])[1:]
+
+    road_index = roads.index(road)
+    road_next_index = roads.index(road_next)
+
+    # 当两条路的不相邻时，构成的路线为直行
+    if abs(road_index - road_next_index) == 2:
+        return True
     else:
-        path = []
-        pass
+        return False
 
-    return path
+
+def get_straight_num(path_, adl_list, cross_df):
+    """从给定的路径中判断直行的次数"""
+    num = 0
+    for pre_node, node, next_node in zip(path_[:-2], path_[1:-1], path_[2:]):
+        if __isGoStraight([pre_node, node, next_node], adl_list, cross_df):
+            num += 1
+
+    return num
+
+
+def get_bestHCHP_with_direction(dp_pairs, adl_list, cross_df, searchNum=200, n=3, bestType=0):
+    """
+    从给定的双向对中获取最佳的HC和HP,满足直行道路最多
+    :pairs: 双向对
+    :adl_list: 带边ID的邻接表
+    :cross_df: cross dataframe
+    :searchNum: 搜索次数设置
+    :n: n是从HP头尾搜索HC时搜索元素的个数
+    :bestType: 表示返回的HC和HP的最优类型，默认是确保HC是最优，同时将生成HC的HP作为最优,若HC不存在最优
+               bestType = 1: 表示返回的HP和HC均为最优，但是HP和HC没有从属关系
+    """
+
+    nodes = get_node_from_pairs(dp_pairs)
+    graph = HamiltonianPath(len(nodes))
+    graph.pairs = dp_pairs
+
+    # set initial length
+    hpLength = int(len(nodes) / 5)
+    hcLength = int(len(nodes) / 5)
+    hcStraightNum = 0
+
+    bestHP = []
+    bestHC = []
+    bestHCP = []
+
+    print("Finding Hamiltonian Paths...")
+    for x in tqdm(range(1, searchNum)):
+        output = graph.isHamiltonianPathExist()
+        solution = output[0]
+        # if len(solution) == numOfNodes:
+        #     yes += 1
+        # else:
+        #     no += 1
+
+        # 求得最优HP
+        if len(solution) > hpLength:
+            bestHP = solution
+            hpLength = len(solution)
+        if len(solution) > hcLength - 3:  # -3 为了放松对hc长度的要求，为了找到更多的直行
+            # 搜索HC
+            for st in solution[:n]:
+                for ed in solution[-n:]:
+                    # st = output[0][0]
+                    # ed = output[0][-1]
+                    if ([st, ed] in dp_pairs) or ([ed, st] in dp_pairs):
+
+                        temp = __get_value_in_list(solution, st, ed)
+
+                        temp_num = get_straight_num(temp, adl_list, cross_df)
+
+                        if temp_num > hcStraightNum:
+                            hcStraightNum = temp_num
+                            bestHCP = solution
+                            bestHC = temp
+                            hcLength = len(bestHC)
+        #
+        #                        print('st, ed:', st, ed)
+        #                        print('Hamiltonian Cycle:', len(output[0]))
+        #                        print('output[0]:', output[0])
+        else:
+            pass
+
+    if 1 == bestType:
+        return [bestHP, bestHC]
+
+    return [bestHCP, bestHC]
+
+## 无效代码
+# def get_hamiltonian_path(adl_list_w, start, end, use_networkx=True):
+#     """
+#     brief: 给定起点和终点，从邻接表中搜索得到一条可行路径，满足最优条件
+#     :param adl_list_w: 不带边ID的邻接表
+#     :param start:
+#     :param end:
+#     :param use_networkx: 默认根据networkx库导入情况决定使用那种方法获取路径
+#     :return:
+#     """
+#     global USE_NETWORKX
+#     if USE_NETWORKX and use_networkx:
+#         G = nx.DiGraph()
+#         for st in adl_list_w.keys():
+#             for to in adl_list_w[st].keys():
+#                 G.add_edge(st, to, weight=(adl_list_w[st][to]))
+#
+#         # path = nx.algorithms.shortest_path(G, start, end)
+#         path = []
+#         print(tournament.is_tournament(G))
+#         print(tournament.hamiltonian_path(G))
+#         # x = cycles.simple_cycles(G)
+#         # print(x)
+#         # y = cycles.find_cycle(G)
+#         # print(y)
+#     else:
+#         path = []
+#         pass
+#
+#     return path
 
 
 def remove_hp_from_dp(dp_, hp):
@@ -535,7 +651,8 @@ def remove_hp_from_dp(dp_, hp):
         elif [next_node, node] in dp_:
             dp_.remove([next_node, node])
         else:
-            print('[node, next_node]:', [node, next_node])
+            pass
+            # print('[node, next_node]:', [node, next_node])
             #TODO: SOME ERROR HERE TO DEBUG
             # raise Exception('hp pairs not in duplex pairs')
     return dp_
@@ -719,7 +836,8 @@ def get_all_paths_with_hc(adl_list, road_df, carIDL, startL, endL, use_networkx=
 
     # 基于get_path_with_hp()函数进行路径规划
     # 为所有车各规划一条最短路径
-    for carID, st, ed in zip(carIDL, startL, endL):
+    print("get_all_paths_with_hc:")
+    for carID, st, ed in tqdm(zip(carIDL, startL, endL)):
         try:
 #            path_n = get_path_with_hp(new_ad, adl_list, hp, st, ed)
 #            path_n = get_path_with_hp_simple(adl_list, hp, st, ed)
@@ -738,6 +856,7 @@ def get_all_paths_with_hc(adl_list, road_df, carIDL, startL, endL, use_networkx=
     return paths
 
 
+# TODO: 效果不好，有待考虑
 def get_all_paths_with_weight_update(adl_list, road_df, car_df, pathType=0, update_w=True, use_networkx=False):
     """
     路劲规划时，权重实时更新
@@ -766,7 +885,7 @@ def get_all_paths_with_weight_update(adl_list, road_df, car_df, pathType=0, upda
     startFlag = 0
 
     # 为所有车各规划一条最短路径
-    for carID, st, ed in zip(car_df_sort['id'], car_df_sort['from'], car_df_sort['to']):
+    for carID, st, ed in tqdm(zip(car_df_sort['id'], car_df_sort['from'], car_df_sort['to'])):
 
         i += 1
 
@@ -820,6 +939,218 @@ def get_all_paths_with_weight_update(adl_list, road_df, car_df, pathType=0, upda
                         # 从路径队列中取出路径，消减该路径在在权重中的影响
                         path_out = pathQueue.get()
                         adl_list_w = update_weight(adl_list_w, path_out, typeU=1)
+
+        # 将规划得到的节点构成的路径转换为边构成的路径
+        path_e = get_path_n2e(path_n, adl_list)
+
+        paths[carID] = path_e
+
+    return paths
+
+
+def get_all_paths_with_hc_cw(adl_list, road_df, cardf, use_networkx=False):
+    #每规划一辆车的路径，所经过的路上权重增加weightAddValue
+    #达到interval时恢复原来的权重
+
+    # 根据每辆车的计划出发时间进行升序排列 速度降序排列
+    car_df_sort = cardf.sort_values(by=['planTime', 'speed'], axis=0, ascending=[True, False])
+
+
+    carIDL = car_df_sort['id']
+    startL = car_df_sort['from']
+    endL = car_df_sort['to']
+    size = carIDL.shape[0]
+
+    # 深拷贝
+    tempdict = copy.deepcopy(adl_list)
+    adl_list_w = convert_adl2adl_w(tempdict)
+
+    """
+    #权重变化函数1
+    # 单调递减
+    #最优参数 weightAddValue = 0.01 shares = 9
+    weightAddValue = 0.01
+    shares = 9
+    interval = int(size / shares)
+    """
+
+    #权重变化函数2
+    #指数衰减
+    #最优参数 factor = 3  shares = 9
+    factor = 3
+    shares = 9
+    interval = int(size / shares)
+
+    paths_e = {}
+
+    i = 1
+
+    # 剪枝
+    dp, sp, rp = cut_adjacency_list(adl_list, road_df, cut_channel_level=2, cut_speed_level=2)
+    _, hc = get_bestHCHP(dp)
+
+    # 基于get_path_with_hp()函数进行路径规划
+    # 为所有车各规划一条最短路径
+    print("get_all_paths_with_hc_cw:")
+    for carID, st, ed in tqdm(zip(carIDL, startL, endL)):
+        try:
+            #            path_n = get_path_with_hp(new_ad, adl_list, hp, st, ed)
+            #            path_n = get_path_with_hp_simple(adl_list, hp, st, ed)
+            path_n = get_path_with_hc_simple(tempdict, hc, st, ed)
+        except:
+            # print("hp", hp)
+            # print("error:st, ed", st, ed)
+            path_n = shortest_path(adl_list_w, st, ed)
+
+            path_n = replan_for_hc(hc, path_n)
+
+        # 将规划得到的节点构成的路径转换为边构成的路径
+        path_e = get_path_n2e(path_n, adl_list)
+
+        paths_e[carID] = path_e
+
+        # 更新权重
+        if (i % interval) == 0:
+            # 深拷贝
+            tempdict = copy.deepcopy(adl_list)
+            adl_list_w = convert_adl2adl_w(tempdict)
+        else:
+            for k in range(len(path_n)-1):
+                cross_last = path_n[k]
+                cross_next = path_n[k+1]
+
+                # 权重变化函数1
+                #addvalue = max(weightAddValue * (interval-2*(i % interval))/interval, 0)
+                # 权重变化函数2
+                addvalue = np.exp(-factor * interval / (interval - (i % interval)))
+
+                tempdict[cross_last][cross_next][1] += addvalue
+
+        i += 1
+
+    return paths_e
+
+
+def get_all_cars_paths_cw(adl_list, cardf, use_networkx=True):
+    """
+    brief: 获取所有车的一条最短路径
+           每规划一辆车的路径，所经过的路上权重增加weightAddValue
+           达到interval时恢复原来的权重
+    :param adl_list: 带有边ID的邻接表
+    :param carIDL: carID 列表
+    :param startL: car 起始点列表
+    :param endL: car 终点列表
+    :param use_networkx:
+    :return: paths: 数据格式:字典{carID： [edge path]}
+    """
+    # 根据每辆车的计划出发时间进行升序排列 速度降序排列
+    car_df_sort = cardf.sort_values(by=['planTime', 'speed'], axis=0, ascending=[True, False])
+
+    carIDL = car_df_sort['id']
+    startL = car_df_sort['from']
+    endL = car_df_sort['to']
+
+    # 检查传入的参数是否合理
+    if not len(carIDL) == len(startL) == len(endL):
+        raise Exception("input size of  carIDL, startL, endL not equal")
+
+    # 深拷贝
+    tempdict = copy.deepcopy(adl_list)
+    adl_list_w = convert_adl2adl_w(tempdict)
+
+    weightAddValue = 0.01
+    shares = 9
+
+    size = carIDL.shape[0]
+    interval = int(size / shares)
+
+    i = 1
+
+    global USE_NETWORKX
+    paths = {}
+    adl_list_w = convert_adl2adl_w(adl_list)
+
+    if False:
+        network = public_transport.TransportNetwork.load_from_adjacency_list(adl_list_w)
+        for carID, st, ed in zip(carIDL, startL, endL):
+            start_stop = public_transport.Stop(str(st))
+            end_stop = public_transport.Stop(str(ed))
+            min_travel_time, shortest_connection = network.find_shortest_connection(start_stop, end_stop)
+            paths[carID] = shortest_connection
+
+    if USE_NETWORKX and use_networkx:
+        G = nx.DiGraph()
+        for st in adl_list_w.keys():
+            for to in adl_list_w[st].keys():
+                G.add_edge(st, to, weight=(adl_list_w[st][to]))
+
+        # 为所有车各规划一条最短路径
+        for carID, st, ed in zip(carIDL, startL, endL):
+            path_n = nx.algorithms.shortest_path(G, st, ed)
+            # 将规划得到的节点构成的路径转换为边构成的路径
+            path_e = get_path_n2e(path_n, adl_list)
+
+            paths[carID] = path_e
+
+    else:
+        # 为所有车各规划一条最短路径
+        print("get_all_cars_paths_cw:")
+        for carID, st, ed in tqdm(zip(carIDL, startL, endL)):
+            path_n = shortest_path(adl_list_w, st, ed)
+
+            # 将规划得到的节点构成的路径转换为边构成的路径
+            path_e = get_path_n2e(path_n, adl_list)
+
+            paths[carID] = path_e
+
+            # 更新权重
+            if (i % interval) == 0:
+                # 深拷贝
+                tempdict = copy.deepcopy(adl_list)
+                adl_list_w = convert_adl2adl_w(tempdict)
+            else:
+                for k in range(len(path_n) - 1):
+                    cross_last = path_n[k]
+                    cross_next = path_n[k + 1]
+
+                    # 设置权重变化函数
+                    # 单调递减
+                    addvalue = max(weightAddValue * (interval - 2 * (i % interval)) / interval, 0)
+                    # 指数衰减
+
+                    tempdict[cross_last][cross_next][1] += addvalue
+
+            i += 1
+
+    return paths
+
+
+def get_allcarspaths_floyd(adl_list, cardf):
+    """
+    brief: floyd获取所有车的一条最短路径
+    :param adl_list: 带有边ID的邻接表
+    :param carIDL: carID 列表
+    :return: paths: 数据格式:字典{carID： [edge path]}
+    """
+    # 根据每辆车的计划出发时间进行升序排列 速度降序排列
+    car_df_sort = cardf.sort_values(by=['planTime', 'speed'], axis=0, ascending=[True, False])
+
+    carIDL = car_df_sort['id']
+    startL = car_df_sort['from']
+    endL = car_df_sort['to']
+
+    # 检查传入的参数是否合理
+    if not len(carIDL) == len(startL) ==len(endL):
+        raise Exception("input size of  carIDL, startL, endL not equal")
+
+    Floydpath = init_Floyd(adl_list)
+
+    paths = {}
+
+    # 为所有车各规划一条最短路径
+    print("get_allcarspaths_floyd:")
+    for carID, st, ed in tqdm(zip(carIDL, startL, endL)):
+        path_n = get_floyd_path(Floydpath, st, ed)
 
         # 将规划得到的节点构成的路径转换为边构成的路径
         path_e = get_path_n2e(path_n, adl_list)

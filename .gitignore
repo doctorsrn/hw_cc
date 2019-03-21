@@ -104,6 +104,8 @@ venv.bak/
 .mypy_cache/
 
 # config
-# /SDK_python/CodeCraft-2019/config*/*
+SDK_python/CodeCraft-2019/config0/answer.txt
+/SDK_python/CodeCraft-2019/config*/*
 /SDK_python/.gitignore
 /SDK_python/CodeCraft-2019/src/test.py
+test.zip

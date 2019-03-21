@@ -90,24 +90,24 @@ def write_answer2file(txt_path, answer_list):
             output.writelines('(' + answer_str[:-1] + ')' + '\n')  # answer_str[:-1] 最后的逗号不写入
 
 
-# if __name__ == "__main__":
-#     rpath = '/home/srn/SRn/Competition/HuaWei/hw_cc/SDK_python/CodeCraft-2019/config0'
-#     path = rpath + '/cross.txt'
-#     path1 = rpath + '/road.txt'
-#     path2 = rpath + '/car.txt'
-#     path3 = rpath + '/answer.txt'
-#
-#     df = read_from_txt(path)
-#     print(df.head())
-#     print(df.shape)
-#
-#     df1 = read_from_txt(path1)
-#     print(df1.head())
-#     print(df1.shape)
-#
-#     df2 = read_from_txt(path2)
-#     print(df2.head())
-#     print(df2.shape)
+if __name__ == "__main__":
+    rpath = '/home/srn/SRn/Competition/HuaWei/hw_cc/SDK_python/CodeCraft-2019/config0'
+    path = rpath + '/cross.txt'
+    path1 = rpath + '/road.txt'
+    path2 = rpath + '/car.txt'
+    path3 = rpath + '/answer.txt'
+
+    df = read_from_txt(path)
+    print(df.head())
+    print(df.shape)
+
+    df1 = read_from_txt(path1)
+    print(df1.head())
+    print(df1.shape)
+
+    df2 = read_from_txt(path2)
+    print(df2.head())
+    print(df2.shape)
 #
 #     car_df = df2
 #     road_df = df1
