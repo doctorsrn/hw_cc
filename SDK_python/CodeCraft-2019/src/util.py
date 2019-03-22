@@ -881,9 +881,13 @@ def get_all_paths_with_weight_update(adl_list, road_df, car_df, cross_df, pathTy
     interval = int(size / shares)
 
     # 剪枝
-    dp, sp, rp = cut_adjacency_list(adl_list, road_df, cut_channel_level=0, cut_speed_level=1)
+    # cut_channel_level=1 2629   cut_channel_level=2 774+668  cut_channel_level=3 583+dead lock
+    # i > 150,100,80  m1 failed
+    # i > 150,100,80 m2 succeed
+    # cut_channel_level=0  1563 i > 350     controlcarnum = 35 m1 failed
+    dp, sp, rp = cut_adjacency_list(adl_list, road_df, cut_channel_level=2, cut_speed_level=1)
 
-    _, hc = get_bestHCHP_with_direction(dp, adl_list, cross_df)
+    _, hc = get_bestHCHP_with_direction(dp, adl_list, cross_df, searchNum=400)
 
     ## 为了更新权重使用的一些参数和变量
     pathQueue = Queue()
@@ -918,12 +922,14 @@ def get_all_paths_with_weight_update(adl_list, road_df, car_df, cross_df, pathTy
 
                     # 然后是权重消减，表示当前车已经行驶玩这条路径，所以要释放这条路
                     # TODO: 设置合理的开始消减权重的条件，当前设置为第100辆车之后开始消减
-                    if i > 100 or startFlag:
+                    # # 50 100 m1 failed  250 m1 succeed  350 succeed
+                    if i > 1000 or startFlag:
                         startFlag = 1
                         if not pathQueue.empty():
                             # 从路径队列中取出路径，消减该路径在在权重中的影响
                             path_out = pathQueue.get()
                             adl_list_w = update_weight(adl_list_w, path_out, typeU=1)
+
         elif pathType == 1:  # 基于HC
             raise Exception("not finish")
             pass
@@ -940,18 +946,21 @@ def get_all_paths_with_weight_update(adl_list, road_df, car_df, cross_df, pathTy
 
                 # 然后是权重消减，表示当前车已经行驶玩这条路径，所以要释放这条路
                 # TODO: 设置合理的开始消减权重的条件，当前设置为第100辆车之后开始消减
-                if i > 100 or startFlag:
+                # 50 100 m1 failed
+                if i > 1000 or startFlag:
                     startFlag = 1
                     if not pathQueue.empty():
                         # 从路径队列中取出路径，消减该路径在在权重中的影响
                         path_out = pathQueue.get()
                         adl_list_w = update_weight(adl_list_w, path_out, typeU=1)
-        # 重置权重
-        if i % interval == 0:
-            adl_list_w = adl_list_w_bkp
 
-            i = 0
-            startFlag = 0
+        # m2 succeed
+        # 重置权重
+        # if i % interval == 0:
+        #     adl_list_w = adl_list_w_bkp
+        #
+        #     i = 0
+        #     startFlag = 0
 
         # 将规划得到的节点构成的路径转换为边构成的路径
         path_e = get_path_n2e(path_n, adl_list)

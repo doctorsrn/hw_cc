@@ -94,9 +94,44 @@ def get_time_plan6(car_df):
     # 发车数量控制2
     # 正弦发车
     # 最优参数 controlcarnum = 23 change = 3 interval = int(carsum/9)
-    controlcarnum = 23
+    # controlcarnum = 20 18 m1 failed   m2 随controlcarnum减小而增大
+    # controlcarnum = 26 剪枝参数cut_channel_level=1, cut_speed_level=1 m1:608 m2:734
+    # controlcarnum = 30 剪枝参数cut_channel_level=1, cut_speed_level=1 m1:failed m2:failed
+
+    # controlcarnum = 28 剪枝参数cut_channel_level=1, cut_speed_level=1 i > 350 m1:failed m2:748     change:4 m1 failed m2 736
+    # controlcarnum = 28 剪枝参数cut_channel_level=1, cut_speed_level=1 i > 550 m1:691 m2:938
+    # controlcarnum = 29 剪枝参数cut_channel_level=1, cut_speed_level=1 i > 550 m1:631 m2:failed
+    # controlcarnum = 29 剪枝参数cut_channel_level=1, cut_speed_level=1 i > 450 m1:732 m2:failed
+    # controlcarnum = 29 剪枝参数cut_channel_level=2, cut_speed_level=1 i > 450 m1:failed m2:failed
+    # controlcarnum = 29 剪枝参数cut_channel_level=2, cut_speed_level=1 i > 750 m1:732 m2:failed
+
+    # controlcarnum = 26 剪枝参数cut_channel_level=2, cut_speed_level=1 i > 750 m1:failed m2:565
+    # controlcarnum = 26 剪枝参数cut_channel_level=2, cut_speed_level=1 i > 450 m1:failed m2:failed
+    # controlcarnum = 26 剪枝参数cut_channel_level=2, cut_speed_level=1 i > 850 m1:failed m2:531
+    # controlcarnum = 26 剪枝参数cut_channel_level=2, cut_speed_level=1 i > 950 m1:failed m2:531
+
+    # controlcarnum = 26 interval = int(carsum/10) 剪枝参数cut_channel_level=2, cut_speed_level=1 i > 950 m1:562 m2:541  ---> best
+    # controlcarnum = 27 interval = int(carsum/10) 剪枝参数cut_channel_level=2, cut_speed_level=1 i > 950 m1:failed m2:522
+    # controlcarnum = 27 interval = int(carsum/11) 剪枝参数cut_channel_level=2, cut_speed_level=1 i > 950 m1:failed m2:527
+    # controlcarnum = 27 interval = int(carsum/11) 剪枝参数cut_channel_level=2, cut_speed_level=1 i > 650 m1:failed m2:528
+    # controlcarnum = 27 interval = int(carsum/11) 剪枝参数cut_channel_level=2, cut_speed_level=1 i > 450 m1:failed m2:failed
+    # controlcarnum = 27 interval = int(carsum/12) 剪枝参数cut_channel_level=2, cut_speed_level=1 i > 450 m1:failed m2:failed
+    # controlcarnum = 27 interval = int(carsum/13) 剪枝参数cut_channel_level=2, cut_speed_level=1 i > 450 m1:failed m2:550
+    # controlcarnum = 27 interval = int(carsum/13) 剪枝参数cut_channel_level=2, cut_speed_level=1 i > 850 m1:failed m2:530
+    # controlcarnum = 26 interval = int(carsum/13) 剪枝参数cut_channel_level=2, cut_speed_level=1 i > 850 m1:failed m2:550
+    # controlcarnum = 26 interval = int(carsum/11) 剪枝参数cut_channel_level=2, cut_speed_level=1 i > 850 m1:failed m2:544
+    # controlcarnum = 26 interval = int(carsum/11) 剪枝参数cut_channel_level=2, cut_speed_level=1 i > 1000 m1:541 m2:544 ---> best best
+    # controlcarnum = 26 interval = int(carsum/11) 剪枝参数cut_channel_level=2, cut_speed_level=1 i > 1200 m1:failed m2:544
+    # controlcarnum = 26 interval = int(carsum/12) 剪枝参数cut_channel_level=2, cut_speed_level=1 i > 1200 m1:563 m2:547 --> succeed
+    # controlcarnum = 27 interval = int(carsum/12) 剪枝参数cut_channel_level=2, cut_speed_level=1 i > 1200 m1:failed m2:536
+
+
+    # controlcarnum = 27 剪枝参数cut_channel_level=1, cut_speed_level=1 i > 350 m1:590 m2:754
+
+
+    controlcarnum = 26
     change = 3
-    interval = int(carsum/9)
+    interval = int(carsum/11)
     control = controlcarnum+int(change * np.sin(i*(2 * np.pi)/interval))
 
     print("get_time_plan6:")
@@ -135,7 +170,8 @@ def get_time_plan6(car_df):
 
     # print(car_df_sort.head(50))
 
-    return time_plans,car_df_sort
+    return time_plans, car_df_sort
+
 
 def get_time_plan5(car_df):
     '''
