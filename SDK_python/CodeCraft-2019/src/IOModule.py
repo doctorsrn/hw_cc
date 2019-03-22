@@ -28,12 +28,18 @@ def read_from_txt(path_, type_= None):
     if path_.find('road') > 0: # road(id,length,speed,channel,from,to,isDuplex)
         df.set_axis(['id', 'length', 'speed', 'channel', 'from', 'to', 'isDuplex'], axis='columns', inplace=True)
         df.set_index(df['id'], inplace=True)
+        df.rename_axis('index', inplace=True)
+
     elif path_.find('car') > 0: # car(id,from,to,speed,planTime)
         df.set_axis(['id',  'from', 'to', 'speed', 'planTime'], axis='columns', inplace=True)
         df.set_index(df['id'], inplace=True)
+        df.rename_axis('index', inplace=True)
+
     elif path_.find('cross') > 0: # cross(id,roadId,roadId,roadId,roadId)
         df.set_axis(['id', 'roadID1', 'roadID2', 'roadID3', 'roadID4'], axis='columns', inplace=True)
         df.set_index(df['id'], inplace=True)
+        df.rename_axis('index', inplace=True)
+
     else:
         raise Exception("input txt file error")
 
@@ -48,6 +54,7 @@ def read_car_from_txt(path_):
 
     df.set_axis(['id', 'from', 'to', 'speed', 'planTime'], axis='columns', inplace=True)
     df.set_index(df['id'], inplace=True)
+    df.rename_axis('index', inplace=True)
 
     return df
 
@@ -60,6 +67,7 @@ def read_road_from_txt(path_):
 
     df.set_axis(['id', 'length', 'speed', 'channel', 'from', 'to', 'isDuplex'], axis='columns', inplace=True)
     df.set_index(df['id'], inplace=True)
+    df.rename_axis('index', inplace=True)
 
     return df
 
@@ -72,6 +80,7 @@ def read_cross_from_txt(path_):
 
     df.set_axis(['id', 'roadID1', 'roadID2', 'roadID3', 'roadID4'], axis='columns', inplace=True)
     df.set_index(df['id'], inplace=True)
+    df.rename_axis('index', inplace=True)
 
     return df
 

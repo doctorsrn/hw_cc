@@ -468,7 +468,8 @@ def get_bestHCHP(dp_pairs, searchNum=200, n=3, bestType=0):
     bestHP = []
     bestHC = []
     bestHCP = []
-    
+
+    print("get_bestHCHP：")
     for x in tqdm(range(1, searchNum)):
         output = graph.isHamiltonianPathExist()
         solution = output[0]
@@ -857,7 +858,7 @@ def get_all_paths_with_hc(adl_list, road_df, carIDL, startL, endL, use_networkx=
 
 
 # TODO: 效果不好，有待考虑
-def get_all_paths_with_weight_update(adl_list, road_df, car_df, pathType=0, update_w=True, use_networkx=False):
+def get_all_paths_with_weight_update(adl_list, road_df, car_df, cross_df, pathType=0, update_w=True, use_networkx=False):
     """
     路劲规划时，权重实时更新
     adl_list: 原始邻接表
@@ -867,23 +868,29 @@ def get_all_paths_with_weight_update(adl_list, road_df, car_df, pathType=0, upda
                              =1: 基于HP
                              =2: 基于原始Dijkstra算法
     """
+    # 根据每辆车的计划出发时间进行升序排列
+    car_df_sort = car_df.sort_values(by=['planTime', 'id'], axis=0, ascending=[True, True])
+    car_len = len(car_df_sort['id'])
+
     paths = {}
+    size = car_df_sort['id'].shape[0]
+    shares = 9
+
     adl_list_w = convert_adl2adl_w(adl_list)
+    adl_list_w_bkp = copy.deepcopy(adl_list_w)
+    interval = int(size / shares)
 
     # 剪枝
     dp, sp, rp = cut_adjacency_list(adl_list, road_df, cut_channel_level=0, cut_speed_level=1)
 
-    _, hc = get_bestHCHP(dp)
-
-    # 根据每辆车的计划出发时间进行升序排列
-    car_df_sort = car_df.sort_values(by='planTime', axis=0, ascending=True)
-    car_len = len(car_df_sort['id'])
+    _, hc = get_bestHCHP_with_direction(dp, adl_list, cross_df)
 
     ## 为了更新权重使用的一些参数和变量
     pathQueue = Queue()
     i = 0
     startFlag = 0
 
+    print("get_all_paths_with_weight_update:")
     # 为所有车各规划一条最短路径
     for carID, st, ed in tqdm(zip(car_df_sort['id'], car_df_sort['from'], car_df_sort['to'])):
 
@@ -939,6 +946,12 @@ def get_all_paths_with_weight_update(adl_list, road_df, car_df, pathType=0, upda
                         # 从路径队列中取出路径，消减该路径在在权重中的影响
                         path_out = pathQueue.get()
                         adl_list_w = update_weight(adl_list_w, path_out, typeU=1)
+        # 重置权重
+        if i % interval == 0:
+            adl_list_w = adl_list_w_bkp
+
+            i = 0
+            startFlag = 0
 
         # 将规划得到的节点构成的路径转换为边构成的路径
         path_e = get_path_n2e(path_n, adl_list)

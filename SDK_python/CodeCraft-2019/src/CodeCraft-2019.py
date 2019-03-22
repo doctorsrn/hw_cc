@@ -56,13 +56,13 @@ def main():
 
     # # get time plans
     # # 效果最好的是get_time_plan6
-    # time_plans, car_df_actual = get_time_plan6(car_df)
+    time_plans, car_df_actual = get_time_plan6(car_df)
 
     # get path plans
     # 效果最好的是 get_all_paths_with_hc_cw
     # paths = get_all_cars_paths(ad_l, car_df['id'], car_df['from'], car_df['to'], use_networkx=False)
     # paths = get_all_paths_with_hc(ad_l, road_df, car_df['id'], car_df['from'], car_df['to'])
-    paths = get_all_paths_with_weight_update(ad_l, road_df, car_df, update_w=False)
+    paths = get_all_paths_with_weight_update(ad_l, road_df, car_df_actual, cross_df, update_w=True)
     # paths = get_allcarspaths_floyd(ad_l, car_df)
     # paths = get_all_cars_paths(ad_l, car_df['id'], car_df['from'], car_df['to'], use_networkx=False)
     # paths = get_all_cars_paths_cw(ad_l, car_df, use_networkx=False)
@@ -70,8 +70,8 @@ def main():
     # paths = get_all_paths_with_hc_cw(ad_l, road_df, car_df_actual)
 
 
-    # get time plans
-    time_plans = get_time_plan0(car_df)
+    # # get time plans
+    # time_plans = get_time_plan0(car_df)
 
     # get answer
     answers = get_answer(car_df['id'], paths, time_plans)

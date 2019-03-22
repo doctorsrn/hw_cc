@@ -1,5 +1,6 @@
 import random
 import numpy as np
+from  tqdm import tqdm
 
 def get_time_plan4(car_df):
     '''
@@ -98,7 +99,8 @@ def get_time_plan6(car_df):
     interval = int(carsum/9)
     control = controlcarnum+int(change * np.sin(i*(2 * np.pi)/interval))
 
-    for carID, pT in zip(car_df_sort['id'], car_df_sort['planTime']):
+    print("get_time_plan6:")
+    for carID, pT in tqdm(zip(car_df_sort['id'], car_df_sort['planTime'])):
         tempsave.append(carID)
         if (i % control) == 0:
             if pT <= time_last:
