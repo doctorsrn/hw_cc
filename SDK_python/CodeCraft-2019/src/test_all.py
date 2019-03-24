@@ -6,11 +6,7 @@ import os
 
 from util import *
 from IOModule import *
-
-from hp import greedy, exhaustive
 from hp_finder import HamiltonianPath
-import public_transport
-import simulated_annealing
 from concurrent.futures import ProcessPoolExecutor
 
 
@@ -65,19 +61,9 @@ def main():
 
     print("adwW:", build_ad_list_without_weight(df, df1, str_pattern=True))
 
-    # hp.py test
-    gr, nl = get_graph(road_df)
-    # gr_test = [[str(x[0]), str(x[1])] for x in dp]
-    print("graph:", gr)
-    print("node list:", nl)
-    print("node list length:", len(nl))
-    # greedy(gr, nl)
-    # exhaustive(gr, nl)
-    # adj_list_visualize(al)
-
     # hp_finder.py test
     nodes = get_node_from_pairs(dp)
-    print('len of nodes and pairs:',len(nodes), len(dp))
+    print('len of nodes and pairs:', len(nodes), len(dp))
     nodes.sort()
     print(nodes)
     
@@ -112,8 +98,8 @@ def main():
     output = get_bestHCHP(dp)
     hc = output[1]
     # print('best hp:', output[0])
-    print('best hc:', output[1])
-    print('best hc straight num:', get_straight_num(hc, al, cross_df))
+    print('\nbest hc:', output[1])
+    print('\nbest hc straight num:', get_straight_num(hc, al, cross_df))
     
     ###基于HC的路径规划测试
     p = get_path_with_hc_simple(adw, hc, start, end)
@@ -121,10 +107,10 @@ def main():
 
 
     ## get_bestHCHP_with_direction
-    output = get_bestHCHP_with_direction(dp, al, cross_df)
+    output = get_bestHCHP_with_direction(dp, al, cross_df, searchNum=500)
     hc = output[1]
 
-    print('best hc with direction:', output[1])
+    print('\nbest hc with direction:', output[1])
     print('best hc straight num:', get_straight_num(hc, al, cross_df))
 
     ###基于HC的路径规划测试

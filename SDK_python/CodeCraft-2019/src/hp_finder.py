@@ -6,63 +6,9 @@ class HamiltonianPath:
     def __init__(self, numOfNodes):
         if numOfNodes > 0:
             self.numOfNodes = numOfNodes
+            self.pairs = None
         else:
             print("Error")
-
-    def calculateMaxPairs(self):
-        self.maxPairs = self.numOfNodes*(self.numOfNodes - 1)//2
-
-    def formHP(self):
-        self.hamiltonianPath = []
-        while len(self.hamiltonianPath) != self.numOfNodes:
-            randomNode = random.randint(1,self.numOfNodes)
-            if randomNode not in self.hamiltonianPath:
-                self.hamiltonianPath.append(randomNode)
-
-    def generateHPPairs(self):
-        self.formHP()
-
-        self.hamiltonianPairs = []
-        for x in range(len(self.hamiltonianPath)-1):
-            pair = (self.hamiltonianPath[x], self.hamiltonianPath[x+1])
-            self.hamiltonianPairs.append(pair)
-        
-        # print(self.hamiltonianPairs)
-        # exit(0)
-        self.generatePairs(self.hamiltonianPairs)
-
-        random.shuffle(self.hamiltonianPairs)
-        self.pairs = self.hamiltonianPairs
-        # print('self.pairs', self.pairs)
-        # exit(0)
-
-    def generatePairs(self, pairs=[]):
-        self.calculateMaxPairs()
-        self.pairs = pairs
-        if self.numOfNodes >= 10:
-            startRange = self.numOfNodes
-            endRange = (self.numOfNodes - 10)*3 + 18
-            numOfPairs = random.randint(startRange, endRange)
-        else:
-            numOfPairs = random.randint(self.numOfNodes - 1, self.maxPairs)
-        print("Random total of pairs:", numOfPairs)
-
-        while len(self.pairs) != numOfPairs:
-            try:
-                startNode = random.randint(1, self.numOfNodes)
-                endNode = random.randint(1, self.numOfNodes)
-                if startNode == endNode:
-                    raise ValueError
-            except ValueError:
-                pass
-            else:
-                pair = (startNode, endNode)
-                invertedPair = (endNode, startNode)
-                if pair not in self.pairs and invertedPair not in self.pairs:
-                    self.pairs.append(pair)
-
-        # print("Pairs:", self.pairs)
-        # exit(0)
 
     def generatePathLink(self):
         # generate adjacent list
@@ -158,9 +104,9 @@ class HamiltonianPath:
                 # 选择最长的作为最优替补解
                 newBestSolution = max(solutionList, key = len)
 
-            if len(newBestSolution) == numOfNodes:
+            if len(newBestSolution) == self.numOfNodes:
                 # print("\nHamiltonian Path Found!\nHP:", newBestSolution)
-                return [True,newBestSolution]
+                return [True, newBestSolution]
 
             else:
                 # print("\nBest Solution Found:", newBestSolution)
@@ -255,12 +201,7 @@ class HamiltonianPath:
         newSolution = []
         newSolution.append(randomStartNode)
         return newSolution
-    
-    
 
-numOfNodes = 60
-yes = 0
-no = 0
 
 def get_node(pairs_):
     nodes = []
@@ -281,7 +222,7 @@ if __name__ == "__main__":
     pa = [[1, 9], [1, 2], [2, 10], [2, 3], [3, 11], [4, 12], [4, 5], [5, 13], [6, 7], [7, 8], [7, 15], [8, 16], [9, 10], [10, 11], [11, 19], [12, 20], [12, 12], [12, 13], [13, 14], [14, 22], [14, 15], [15, 16], [15, 23], [16, 24], [17, 25], [17, 18], [19, 27], [19, 20], [20, 28], [20, 21], [21, 22], [22, 30], [23, 24], [24, 32], [25, 33], [26, 34], [26, 27], [26, 26], [28, 36], [28, 28], [28, 29], [29, 30], [31, 32], [31, 39], [33, 41], [33, 34], [34, 35], [35, 43], [36, 44], [36, 37], [37, 45], [37, 38], [38, 46], [38, 38], [39, 40], [39, 47], [40, 48], [41, 42], [42, 50], [42, 43], [43, 44], [44, 45], [45, 53], [46, 46], [48, 56], [49, 57], [49, 50], [50, 58], [51, 59], [52, 60], [52, 52], [53, 61], [54, 62], [54, 55], [55, 56], [55, 63], [58, 59], [59, 60], [60, 61], [61, 62], [62, 63], [63, 64]]
 
     nodes = get_node(pa)
-    print('nodes',nodes)
+    print('nodes', nodes)
     print('nodes_length:', len(nodes))
     # pa =[[int(x[0]),int(x[1])] for x in pa_s]
     print('pairs:', pa)
@@ -289,27 +230,4 @@ if __name__ == "__main__":
     graph.pairs = pa
     output = graph.isHamiltonianPathExist()
     solution = output[0]
-    # print(solution)
-    if len(solution) == numOfNodes:
-        yes += 1
-    else:
-        no += 1
-    exit(0)
-    ########
-
-
-    loop_start_time = time.clock()
-    for x in range(1,101):
-        print(x)
-        graph = HamiltonianPath(numOfNodes)
-        graph.generateHPPairs()
-        output = graph.isHamiltonianPathExist()
-        solution = output[0]
-        if len(solution) == numOfNodes:
-            yes += 1
-        else:
-            no += 1
-
-    loop_time_elapsed = (time.clock() - loop_start_time)
-    print("Accuracy:", yes,"%")
-    print("Time taken for 100 runs:", round(loop_time_elapsed, 2))
+    print('solution: ', solution)

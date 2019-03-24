@@ -604,37 +604,6 @@ def get_bestHCHP_with_direction(dp_pairs, adl_list, cross_df, searchNum=200, n=3
 
     return [bestHCP, bestHC]
 
-## 无效代码
-# def get_hamiltonian_path(adl_list_w, start, end, use_networkx=True):
-#     """
-#     brief: 给定起点和终点，从邻接表中搜索得到一条可行路径，满足最优条件
-#     :param adl_list_w: 不带边ID的邻接表
-#     :param start:
-#     :param end:
-#     :param use_networkx: 默认根据networkx库导入情况决定使用那种方法获取路径
-#     :return:
-#     """
-#     global USE_NETWORKX
-#     if USE_NETWORKX and use_networkx:
-#         G = nx.DiGraph()
-#         for st in adl_list_w.keys():
-#             for to in adl_list_w[st].keys():
-#                 G.add_edge(st, to, weight=(adl_list_w[st][to]))
-#
-#         # path = nx.algorithms.shortest_path(G, start, end)
-#         path = []
-#         print(tournament.is_tournament(G))
-#         print(tournament.hamiltonian_path(G))
-#         # x = cycles.simple_cycles(G)
-#         # print(x)
-#         # y = cycles.find_cycle(G)
-#         # print(y)
-#     else:
-#         path = []
-#         pass
-#
-#     return path
-
 
 def remove_hp_from_dp(dp_, hp):
     """
@@ -675,35 +644,6 @@ def rebuild_adl_from_hp(adl_, dp_, sp_, rp_, hp):
 
     # 得到所有不在hamiltonian path中的双向对
     all_dp = rp_ + remove_hp_from_dp(dp_, hp)
-
-    ############ 下面为无效代码
-    # # 从all_dp添加邻接关系至新的邻接表
-    # for pair in all_dp:
-    #     # pair[0] -> pair[1]
-    #     if new_adl.__contains__(pair[0]):
-    #         weight = adwE[pair[0]][pair[1]]
-    #         new_adl[pair[0]][pair[1]] = weight
-    #     else:
-    #         weight = adwE[pair[0]][pair[1]]
-    #         new_adl[pair[0]] = {pair[1]: weight}
-    #
-    #     # pair[1] -> pair[0]
-    #     if new_adl.__contains__(pair[1]):
-    #         weight = adwE[pair[1]][pair[0]]
-    #         new_adl[pair[1]][pair[0]] = weight
-    #     else:
-    #         weight = adwE[pair[1]][pair[0]]
-    #         new_adl[pair[1]] = {pair[0]: weight}
-    #
-    # # 从sp中添加邻接关系至邻接表
-    # for pair in sp_:
-    #     # 只有单向pair[0] -> pair[1]
-    #     if new_adl.__contains__(pair[0]):
-    #         weight = adwE[pair[0]][pair[1]]
-    #         new_adl[pair[0]][pair[1]] = weight
-    #     else:
-    #         weight = adwE[pair[0]][pair[1]]
-    #         new_adl[pair[0]] = {pair[1]: weight}
 
     # 将hp中的所有节点作为一个大节点，命名为'HP',且'HP'继承它所包含节点的邻接关系
     # hp是list
@@ -1490,14 +1430,6 @@ def get_all_cars_paths(adl_list, carIDL, startL, endL, use_networkx=True):
     paths = {}
     adl_list_w = convert_adl2adl_w(adl_list)
 
-    if False:
-        network = public_transport.TransportNetwork.load_from_adjacency_list(adl_list_w)
-        for carID, st, ed in zip(carIDL, startL, endL):
-            start_stop = public_transport.Stop(str(st))
-            end_stop = public_transport.Stop(str(ed))
-            min_travel_time, shortest_connection = network.find_shortest_connection(start_stop, end_stop)
-            paths[carID] = shortest_connection
-
     if USE_NETWORKX and use_networkx:
         G = nx.DiGraph()
         for st in adl_list_w.keys():
@@ -1660,20 +1592,3 @@ def get_answer(car_list, path_plan, time_plan):
         answer.append(time_plan[carID] + path_plan[carID])
 
     return answer
- 
-
-if __name__ == "__main__":
-    print(__get_value_in_cycle_list([1,2,4,5,7,9], 7, 1))
-    print(__get_value_in_list([1,2,4,5,7,9], 1, 7))
-#     al = {1: {2: [5000, 2.0], 7: [5005, 2.0]}, 2: {8: [5006, 2.0], 1: [5000, 2.0], 3: [5001, 2.0]}, 3: {9: [5007, 2.0], 2: [5001, 2.0], 4: [5002, 2.0]}, 4: {10: [5008, 2.0], 3: [5002, 2.0], 5: [5003, 2.0]}, 5: {11: [5009, 2.0], 4: [5003, 2.0], 6: [5004, 2.0]}, 6: {12: [5010, 2.0], 5: [5004, 2.0]}, 7: {8: [5011, 2.0], 1: [5005, 2.0], 13: [5016, 2.0]}, 8: {9: [5012, 2.0], 2: [5006, 2.0], 14: [5017, 2.0], 7: [5011, 2.0]}, 9: {8: [5012, 2.0], 10: [5013, 2.0], 3: [5007, 2.0], 15: [5018, 2.0]}, 10: {16: [5019, 2.0], 9: [5013, 2.0], 11: [5014, 2.0], 4: [5008, 2.0]}, 11: {17: [5020, 2.0], 10: [5014, 2.0], 12: [5015, 2.0], 5: [5009, 2.0]}, 12: {18: [5021, 2.0], 11: [5015, 2.0], 6: [5010, 2.0]}, 13: {19: [5027, 2.0], 14: [5022, 2.0], 7: [5016, 2.0]}, 14: {8: [5017, 2.0], 20: [5028, 2.0], 13: [5022, 2.0], 15: [5023, 2.0]}, 15: {16: [5024, 2.0], 9: [5018, 2.0], 21: [5029, 2.0], 14: [5023, 2.0]}, 16: {17: [5025, 2.0], 10: [5019, 2.0], 22: [5030, 2.0], 15: [5024, 2.0]}, 17: {16: [5025, 2.0], 18: [5026, 2.0], 11: [5020, 2.0], 23: [5031, 2.0]}, 18: {24: [5032, 2.0], 17: [5026, 2.0], 12: [5021, 2.0]}, 19: {25: [5038, 2.0], 20: [5033, 2.0], 13: [5027, 2.0]}, 20: {26: [5039, 2.0], 19: [5033, 2.0], 21: [5034, 2.0], 14: [5028, 2.0]}, 21: {27: [5040, 2.0], 20: [5034, 2.0], 22: [5035, 2.0], 15: [5029, 2.0]}, 22: {16: [5030, 2.0], 28: [5041, 2.0], 21: [5035, 2.0], 23: [5036, 2.0]}, 23: {24: [5037, 2.0], 17: [5031, 2.0], 29: [5042, 2.0], 22: [5036, 2.0]}, 24: {18: [5032, 2.0], 30: [5043, 2.0], 23: [5037, 2.0]}, 25: {26: [5044, 2.0], 19: [5038, 2.0], 31: [5049, 2.0]}, 26: {32: [5050, 2.0], 25: [5044, 2.0], 27: [5045, 2.0], 20: [5039, 2.0]}, 27: {33: [5051, 2.0], 26: [5045, 2.0], 28: [5046, 2.0], 21: [5040, 2.0]}, 28: {34: [5052, 2.0], 27: [5046, 2.0], 29: [5047, 2.0], 22: [5041, 2.0]}, 29: {35: [5053, 2.0], 28: [5047, 2.0], 30: [5048, 2.0], 23: [5042, 2.0]}, 30: {24: [5043, 2.0], 36: [5054, 2.0], 29: [5048, 2.0]}, 31: {32: [5055, 2.0], 25: [5049, 2.0]}, 32: {33: [5056, 2.0], 26: [5050, 2.0], 31: [5055, 2.0]}, 33: {32: [5056, 2.0], 34: [5057, 2.0], 27: [5051, 2.0]}, 34: {33: [5057, 2.0], 35: [5058, 2.0], 28: [5052, 2.0]}, 35: {34: [5058, 2.0], 36: [5059, 2.0], 29: [5053, 2.0]}, 36: {35: [5059, 2.0], 30: [5054, 2.0]}}
-#     pn = [1, 7, 13, 19, 20]
-#     pe = get_path_n2e(pn, al)
-#     print(pe)
-#
-#     # get_answer(car_list, path_plan, time_plan) test
-#     cl = [100, 101]
-#     pp = {100: [203, 303], 101: [213, 303, 304, 432]}  # path
-#     tp = {100: [100, 1], 101: [101, 3]}  # time
-#     an = get_answer(cl, pp, tp)
-#     print(an)
-#
