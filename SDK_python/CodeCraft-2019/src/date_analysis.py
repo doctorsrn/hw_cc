@@ -29,23 +29,26 @@ print(car_df.shape)
 
 
 # 对道路进行数据分析
-plt.figure(1)
+plt.figure(1, figsize=(6, 12))
 #第一行第一列图形
-ax1 = plt.subplot(2,2,1)
+ax1 = plt.subplot(4,2,1)
 #第一行第二列图形
-ax2 = plt.subplot(2,2,2)
+ax2 = plt.subplot(4,2,2)
 #第二行
-ax3 = plt.subplot(2,2,3)
+ax3 = plt.subplot(4,2,3)
 
-ax4 = plt.subplot(2,2,4)
+ax4 = plt.subplot(4,2,4)
+ax5 = plt.subplot(4,2,5)
+ax6 = plt.subplot(4,2,6)
+ax7 = plt.subplot(4,2,7)
 
 # 设置子图间距
 plt.tight_layout(1.5, 1.5, 1.5)
-plt.subplots_adjust(wspace =0.4, hspace =0.8)
+plt.subplots_adjust(wspace =0.3, hspace =0.6)
 plt.sca(ax1)
 road_df['speed'].plot.hist(grid=True, bins=20, rwidth=0.9,
      color='#607c8e')
-plt.title('speed distribution')
+plt.title('road speed distribution')
 plt.xlabel('max speed')
 plt.ylabel('Commute Time')
 plt.grid(axis='y', alpha=0.75)
@@ -75,7 +78,7 @@ plt.xlabel('to')
 plt.ylabel('Commute Time')
 plt.grid(axis='y', alpha=0.75)
 
-plt.figure(2)
+plt.sca(ax5)
 road_df['isDuplex'].plot.hist(grid=True, bins=20, rwidth=0.9,
      color='#607c8e')
 plt.title('isDuplex distribution')
@@ -84,7 +87,7 @@ plt.ylabel('Commute Time')
 plt.grid(axis='y', alpha=0.75)
 
 road_df['time'] = road_df.apply(lambda x: (x['length'] / x['speed']), axis=1)
-plt.figure(6)
+plt.sca(ax6)
 road_df['time'].plot.hist(grid=True, bins=20, rwidth=0.9,
      color='#607c8e')
 plt.title('time cost distribution')
@@ -92,17 +95,19 @@ plt.xlabel('time cost')
 plt.ylabel('Commute Time')
 plt.grid(axis='y', alpha=0.75)
 
-plt.figure(7)
+plt.sca(ax7)
 road_df['length'].plot.hist(grid=True, bins=20, rwidth=0.9,
      color='#607c8e')
 plt.title('length distribution')
 plt.xlabel('length cost')
 plt.ylabel('Commute Time')
 plt.grid(axis='y', alpha=0.75)
+
+
 # 对路口进行分析
 cross_df['count'] = (cross_df < 0).sum(axis=1)
 
-plt.figure(3)
+plt.figure(2)
 cross_df['count'].plot.hist(grid=True, bins=20, rwidth=0.9,
      color='#607c8e')
 plt.title('cross -1 distribution')
@@ -112,23 +117,23 @@ plt.grid(axis='y', alpha=0.75)
 
 
 ## 对车辆数据进行分析
+plt.figure(3, figsize=(6, 8))
+#第一行第一列图形
+ax1 = plt.subplot(3,2,1)
+#第一行第二列图形
+ax2 = plt.subplot(3,2,2)
+#第二行
+ax3 = plt.subplot(3,2,3)
+ax4 = plt.subplot(3,2,4)
+ax5 = plt.subplot(3,2,5)
+
 #统计车辆起始站点间路口数
 car_df['distance'] = car_df.apply(lambda x: abs(x['to'] - x['from']), axis=1)
 
-
-plt.figure(4)
-#第一行第一列图形
-ax1 = plt.subplot(2,2,1)
-#第一行第二列图形
-ax2 = plt.subplot(2,2,2)
-#第二行
-ax3 = plt.subplot(2,2,3)
-
-ax4 = plt.subplot(2,2,4)
-
 # 设置子图间距
 plt.tight_layout(1.5, 1.5, 1.5)
-plt.subplots_adjust(wspace =0.4, hspace =0.8)
+plt.subplots_adjust(wspace =0.3, hspace =0.6)
+
 plt.sca(ax1)
 car_df['from'].plot.hist(grid=True, bins=20, rwidth=0.9,
      color='#607c8e')
@@ -161,7 +166,7 @@ plt.xlabel('planTime')
 plt.ylabel('Commute Time')
 plt.grid(axis='y', alpha=0.75)
 
-plt.figure(5)
+plt.sca(ax4)
 car_df['distance'].plot.hist(grid=True, bins=20, rwidth=0.9,
      color='#607c8e')
 plt.title('distance distribution')
@@ -169,7 +174,7 @@ plt.xlabel('distance')
 plt.ylabel('Commute Time')
 plt.grid(axis='y', alpha=0.75)
 
-plt.figure(8)
+plt.sca(ax5)
 plt.scatter(list(car_df['from']), list(car_df['to']))
 plt.title('car from-to distribution')
 plt.xlabel('car from')
