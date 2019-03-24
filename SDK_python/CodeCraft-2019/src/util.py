@@ -45,9 +45,6 @@ import numpy as np
 
 from dijkstra.dijkstra import shortest_path
 
-# import public_transport
-# import simulated_annealing
-
 from utilzp import *
 from floyd import *
 
@@ -1091,14 +1088,6 @@ def get_all_cars_paths_cw(adl_list, cardf, use_networkx=True):
     global USE_NETWORKX
     paths = {}
     adl_list_w = convert_adl2adl_w(adl_list)
-
-    if False:
-        network = public_transport.TransportNetwork.load_from_adjacency_list(adl_list_w)
-        for carID, st, ed in zip(carIDL, startL, endL):
-            start_stop = public_transport.Stop(str(st))
-            end_stop = public_transport.Stop(str(ed))
-            min_travel_time, shortest_connection = network.find_shortest_connection(start_stop, end_stop)
-            paths[carID] = shortest_connection
 
     if USE_NETWORKX and use_networkx:
         G = nx.DiGraph()

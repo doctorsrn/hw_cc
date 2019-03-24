@@ -1,6 +1,6 @@
 import random
 import numpy as np
-from  tqdm import tqdm
+from tqdm import tqdm
 
 def get_time_plan4(car_df):
     '''

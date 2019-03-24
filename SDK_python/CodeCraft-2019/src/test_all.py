@@ -14,10 +14,9 @@ import simulated_annealing
 from concurrent.futures import ProcessPoolExecutor
 
 
-
 def main():
-#    rpath = '/home/srn/SRn/Competition/HuaWei/hw_cc/SDK_python/CodeCraft-2019/config0'
-    rpath = '../config0'
+
+    rpath = '../config1'
     path = rpath + '/cross.txt'
     path1 = rpath + '/road.txt'
     path2 = rpath + '/car.txt'
@@ -172,7 +171,7 @@ def main():
 #    pa = get_all_paths_with_hc(al, road_df, car_df['id'], car_df['from'], car_df['to'])
     
     # test get_all_paths_with_weight_update(adl_list, road_df, car_df, pathType=0, use_networkx=False):
-    pa = get_all_paths_with_weight_update(al, road_df, car_df)
+    pa = get_all_paths_with_weight_update(al, road_df, car_df, cross_df)
     
     end_time = time.clock()
     # print('all cars paths：', pa)

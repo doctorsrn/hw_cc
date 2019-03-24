@@ -1,13 +1,8 @@
 import logging
 import sys
-# import numpy as np
-# from util import build_adjacency_list, adj_list_visualize, get_path, build_ad_list_without_edge_id
 from util import *
 from IOModule import *
 import os
-
-# from move_zp import *
-
 
 # logging.basicConfig(level=logging.DEBUG,
 #                     filename='../logs/CodeCraft-2019.log',
