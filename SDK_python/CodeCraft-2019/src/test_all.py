@@ -5,6 +5,7 @@ import os
 # import numpy as np
 
 from util import *
+from util1 import *
 from IOModule import *
 from hp_finder import HamiltonianPath
 from concurrent.futures import ProcessPoolExecutor
@@ -154,17 +155,19 @@ def main():
     start_time = time.clock()
 
     # test function: get_all_cars_paths(adl_list, carIDL, startL, endL, use_networkx=True)
-#    pa = get_all_paths_with_hc(al, road_df, car_df['id'], car_df['from'], car_df['to'])
+    pa = get_all_paths_with_hc(al, road_df, car_df['id'], car_df['from'], car_df['to'])
     
     # test get_all_paths_with_weight_update(adl_list, road_df, car_df, pathType=0, use_networkx=False):
-    pa = get_all_paths_with_weight_update(al, road_df, car_df, cross_df)
+    # pa = get_all_paths_with_weight_update(al, road_df, car_df, cross_df)
+    ct, at = get_benchmark(pa, car_df, road_df, cross_df)
+    print("benchmark hc: all time cost:", at)
     
     end_time = time.clock()
     # print('all cars paths：', pa)
     print(len(pa))
     print('CPU cost time for path plan: ', end_time - start_time)
     # print(pa)
-    sys.exit(0)
+    # sys.exit(0)
     #####
 
     # adj_list_visualize(new_ad)
@@ -179,30 +182,32 @@ def main():
     # get_hamiltonian_path(adw, 1, 20)
 
     # # 可视化有向图
-    adj_list_visualize(al)
+    # adj_list_visualize(al)
     # exit(1)
 
     # 最短路径搜索
     # adw['HP'] = {9: 2.5, 1: 2.5}
-    p = get_path(adw, 1, 20, use_networkx=False)
-    print('shortest path is:', p)
-
-
-    # 最短路径搜索
-    p1 = shortest_path(adw, 1, 20)
-    print(p1)
-
-    start_time = time.clock()
-
-    # test function: get_all_cars_paths(adl_list, carIDL, startL, endL, use_networkx=True)
-#    pa = get_all_cars_paths(al, df2['id'], df2['from'], df2['to'], use_networkx=False)
-    
-
-
-    end_time = time.clock()
-    # print('all cars paths：', pa)
-    print(len(pa))
-    print('CPU cost time for path plan: ', end_time - start_time)
+#     p = get_path(adw, 1, 20, use_networkx=False)
+#     print('shortest path is:', p)
+#
+#
+#     # 最短路径搜索
+#     p1 = shortest_path(adw, 1, 20)
+#     print(p1)
+#
+#     start_time = time.clock()
+#
+#     # test function: get_all_cars_paths(adl_list, carIDL, startL, endL, use_networkx=True)
+    pa = get_all_cars_paths(al, df2['id'], df2['from'], df2['to'], use_networkx=False)
+    ct, at = get_benchmark(pa, car_df, road_df, cross_df)
+    print("benchmark dijkstra: all time cost:", at)
+#
+#
+#
+#     end_time = time.clock()
+#     # print('all cars paths：', pa)
+#     print(len(pa))
+#     print('CPU cost time for path plan: ', end_time - start_time)
 
     sys.exit()
 

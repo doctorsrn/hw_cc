@@ -761,7 +761,7 @@ def replan_for_hc(hc, path_origin_):
 
     return path_origin_
 
-
+# TODO: improve this function to multi-process
 def get_all_paths_with_hc(adl_list, road_df, carIDL, startL, endL, use_networkx=False):
 
     paths = {}
@@ -774,7 +774,7 @@ def get_all_paths_with_hc(adl_list, road_df, carIDL, startL, endL, use_networkx=
 
     # 基于get_path_with_hp()函数进行路径规划
     # 为所有车各规划一条最短路径
-    print("get_all_paths_with_hc:")
+    print("\nget_all_paths_with_hc:")
     for carID, st, ed in tqdm(zip(carIDL, startL, endL)):
         try:
 #            path_n = get_path_with_hp(new_ad, adl_list, hp, st, ed)
