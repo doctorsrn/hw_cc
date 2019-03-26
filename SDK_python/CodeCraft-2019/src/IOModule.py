@@ -105,3 +105,4 @@ if __name__ == "__main__":
     car_df = read_from_txt(path2)
     print(car_df.head())
     print(car_df.shape)
+
