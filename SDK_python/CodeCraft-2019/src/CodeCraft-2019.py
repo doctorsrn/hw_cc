@@ -1,6 +1,7 @@
 import logging
 import sys
 from util import *
+from util1 import *
 from IOModule import *
 import os
 
@@ -49,9 +50,21 @@ def main():
     ad_l = build_adjacency_list(cross_df, road_df)
     # ad_l = build_adjacency_list2(cross_df, road_df)
 
+
     # # get time plans
     # # 效果最好的是get_time_plan6
-    time_plans, car_df_actual = get_time_plan6(car_df)
+    # time_plans, car_df_actual = get_time_plan6(car_df)
+    # pa = get_all_cars_paths(ad_l, car_df['id'], car_df['from'], car_df['to'], use_networkx=False)
+    # time_plans, car_df_actual = get_time_plan7(pa, car_df, road_df, cross_df)
+
+    # super time plan test
+    # pa = get_all_cars_paths(ad_l, car_df['id'], car_df['from'], car_df['to'], use_networkx=False)
+    pa = get_all_paths_with_hc(ad_l, road_df, car_df['id'], car_df['from'], car_df['to'])
+    time_plans, car_df_actual = super_time_plan(pa, car_df, road_df, cross_df)
+
+    # plan8
+    # time_plans = get_time_plan8(car_df, road_df, cross_df)
+
 
     # get path plans
     # 效果最好的是 get_all_paths_with_hc_cw

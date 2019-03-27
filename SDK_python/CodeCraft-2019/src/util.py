@@ -49,7 +49,11 @@ from utilzp import *
 from floyd import *
 
 from hp_finder import HamiltonianPath
+
 from tqdm import tqdm
+
+def tqdm(x):
+    return x
 
 try:
     global USE_NETWORKX
@@ -822,7 +826,7 @@ def get_all_paths_with_weight_update(adl_list, road_df, car_df, cross_df, pathTy
     # i > 150,100,80  m1 failed
     # i > 150,100,80 m2 succeed
     # cut_channel_level=0  1563 i > 350     controlcarnum = 35 m1 failed
-    dp, sp, rp = cut_adjacency_list(adl_list, road_df, cut_channel_level=2, cut_speed_level=1)
+    dp, sp, rp = cut_adjacency_list(adl_list, road_df, cut_channel_level=1, cut_speed_level=1)
 
     _, hc = get_bestHCHP_with_direction(dp, adl_list, cross_df, searchNum=400)
 
@@ -860,14 +864,14 @@ def get_all_paths_with_weight_update(adl_list, road_df, car_df, cross_df, pathTy
                     # 然后是权重消减，表示当前车已经行驶玩这条路径，所以要释放这条路
                     # TODO: 设置合理的开始消减权重的条件，当前设置为第100辆车之后开始消减
                     # # 50 100 m1 failed  250 m1 succeed  350 succeed
-                    if i > 1000 or startFlag:
+                    if i > 800 or startFlag:
                         startFlag = 1
                         if not pathQueue.empty():
                             # 从路径队列中取出路径，消减该路径在在权重中的影响
                             path_out = pathQueue.get()
                             adl_list_w = update_weight(adl_list_w, path_out, typeU=1)
 
-        elif pathType == 1:  # 基于HC
+        elif pathType == 1:  # 基于HP
             raise Exception("not finish")
             pass
 
@@ -884,7 +888,7 @@ def get_all_paths_with_weight_update(adl_list, road_df, car_df, cross_df, pathTy
                 # 然后是权重消减，表示当前车已经行驶玩这条路径，所以要释放这条路
                 # TODO: 设置合理的开始消减权重的条件，当前设置为第100辆车之后开始消减
                 # 50 100 m1 failed
-                if i > 1000 or startFlag:
+                if i > 800 or startFlag:
                     startFlag = 1
                     if not pathQueue.empty():
                         # 从路径队列中取出路径，消减该路径在在权重中的影响
