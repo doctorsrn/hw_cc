@@ -21,51 +21,51 @@ g_road_used = None
 import matplotlib
 import matplotlib.pyplot as plt
 
-# %matplotlib inline
+# # %matplotlib inline
+#
+# # set up matplotlib
+# is_ipython = 'inline' in matplotlib.get_backend()
+# if is_ipython:
+#     from IPython import display
+#
+# plt.ion()
 
-# set up matplotlib
-is_ipython = 'inline' in matplotlib.get_backend()
-if is_ipython:
-    from IPython import display
-
-plt.ion()
-
-
-def plot_durations(y):
-    plt.figure(1, figsize=(10, 10))
-    plt.clf()
-    ax1 = plt.subplot(2, 2, 1)
-    ax2 = plt.subplot(2, 2, 2)
-    ax3 = plt.subplot(2, 2, 3)
-    ax4 = plt.subplot(2, 2, 4)
-    plt.sca(ax1)
-    plt.title('road load rate ')
-    plt.xlabel('time slice')
-    plt.ylabel('load rate')
-    plt.plot(y[:, 0], y[:, 1])
-
-    plt.sca(ax2)
-    plt.title('cars to go ')
-    plt.xlabel('time slice')
-    plt.ylabel('cars num')
-    plt.plot(y[:, 0], y[:, 2])
-
-    plt.sca(ax3)
-    plt.title('cars on road ')
-    plt.xlabel('time slice')
-    plt.ylabel('cars on road')
-    plt.plot(y[:, 0], y[:, 3])
-
-    plt.sca(ax4)
-    plt.title('cars arrived ')
-    plt.xlabel('time slice')
-    plt.ylabel('cars arrived num')
-    plt.plot(y[:, 0], y[:, 4])
-
-    plt.pause(0.001)  # pause a bit so that plots are updated
-    if is_ipython:
-        display.clear_output(wait=True)
-        display.display(plt.gcf())
+#
+# def plot_durations(y):
+#     plt.figure(1, figsize=(10, 10))
+#     plt.clf()
+#     ax1 = plt.subplot(2, 2, 1)
+#     ax2 = plt.subplot(2, 2, 2)
+#     ax3 = plt.subplot(2, 2, 3)
+#     ax4 = plt.subplot(2, 2, 4)
+#     plt.sca(ax1)
+#     plt.title('road load rate ')
+#     plt.xlabel('time slice')
+#     plt.ylabel('load rate')
+#     plt.plot(y[:, 0], y[:, 1])
+#
+#     plt.sca(ax2)
+#     plt.title('cars to go ')
+#     plt.xlabel('time slice')
+#     plt.ylabel('cars num')
+#     plt.plot(y[:, 0], y[:, 2])
+#
+#     plt.sca(ax3)
+#     plt.title('cars on road ')
+#     plt.xlabel('time slice')
+#     plt.ylabel('cars on road')
+#     plt.plot(y[:, 0], y[:, 3])
+#
+#     plt.sca(ax4)
+#     plt.title('cars arrived ')
+#     plt.xlabel('time slice')
+#     plt.ylabel('cars arrived num')
+#     plt.plot(y[:, 0], y[:, 4])
+#
+#     plt.pause(0.001)  # pause a bit so that plots are updated
+#     if is_ipython:
+#         display.clear_output(wait=True)
+#         display.display(plt.gcf())
 
 
 def __get_time_cost(paths, carL, car_df, road_df):
@@ -139,9 +139,9 @@ controlcarnum = 25
     interval = 90   m1 fail m2 887
 """
 def car_num_update(time_slice, load_rate=0, carsum=0):
-    controlcarnum = 12
+    controlcarnum = 13
     change = 10
-    interval = 120
+    interval = 80
     # control由三部分构成
     # 基本controlcarnum，正弦int(change * np.sin(time_slice*(2 * np.pi)/interval))
     # 衰减：y=-x^2 + 100或者y=-0.1x^3+100
@@ -166,7 +166,7 @@ def car_num_update(time_slice, load_rate=0, carsum=0):
     return control
 
 
-def super_time_plan(paths, car_df, road_df, cross_df):
+def super_time_plan(paths, car_df, road_df, cross_df, adl=None):
     """
     尝试基于时间迭代的实时路径规划与时间规划
     :type paths: 所有车的理想路径，可以是基于HC的路径或者直接Dijkstra的路径,数据格式:字典{carID： [edge path]}
@@ -183,6 +183,9 @@ def super_time_plan(paths, car_df, road_df, cross_df):
     # 存储路径和时间规划结果
     paths_fianl = {}
     time_final = {}
+    adwE = convert_adl2adl_w(adl)
+    adl_cut = deepcopy(adwE)
+
     y = []
 
     ## 系统状态初始化：车，路，路口
@@ -233,6 +236,8 @@ def super_time_plan(paths, car_df, road_df, cross_df):
     road_df_to = road_df['to'].to_dict()
     road_df_from = road_df['from'].to_dict()
     car_df_speed = car_df['speed'].to_dict()
+    road_from_to = road_df[['from','to']].to_dict()
+    car_to = car_df['to'].to_dict()
 
     # print(road_status.head())
     # 路口： 路口？？？
@@ -243,9 +248,10 @@ def super_time_plan(paths, car_df, road_df, cross_df):
     car_num = 25  # 每个时间片发车数量
     cap_rate = 0  # 道路负载率
     cars_arrived_count = 0
+    car_debug = 0
 
     #    carlist = list(car_df['id'])
-    print("start time planning:")
+    print("start time and path planning:")
     for i in tqdm(range(1, time_slice_num)):
 
         ## 选取当前时间片要出发的车
@@ -264,6 +270,7 @@ def super_time_plan(paths, car_df, road_df, cross_df):
         # 选出要发的车
         # 判断是否满足发车条件，满足则发车，不满足则考虑延后发车或者路径重规划
         for carID in temp_car['id']:
+
             # 能否发车的条件判断：当前道路的车容量是否达到最大（最大值的80%），以及起始位置是否全被占用，以及timecost的消耗是否过大，
             # 对于时间消耗过大的车辆采取延后出发处理（考虑延后次数的限制）
             # 此时每发一辆车，采用状态立即更新：主要更新包括道路使用情况
@@ -304,7 +311,6 @@ def super_time_plan(paths, car_df, road_df, cross_df):
                     # 不可以发车：车依旧为等待发车状态，将发车时间片向后推1个时间片
                     # 更新发车池
                     cars_pool.loc[carID, 'planTime'] += 1
-
 
             elif road_df_from[start_road] in [road_df_from[next_road], road_df_to[next_road]]:
                 #                if road_status['cap2'][start_road] - road_status['used2'][start_road] > 2:
@@ -378,6 +384,7 @@ def super_time_plan(paths, car_df, road_df, cross_df):
                 #                for car, posi in car_on_road.items():
                 car_on_road = list(road_used_cars1[road_id].items())
                 for car, posi in car_on_road:
+                    car_debug = car
                     road_len = road_status_length[road_id]
                     #                    car_speed = car_status['speed'][car]
                     car_speed = car_df_speed[car]
@@ -389,7 +396,12 @@ def super_time_plan(paths, car_df, road_df, cross_df):
                         # 车在最后一段路上
                         next_road = road_id
                     else:
-                        next_road = car_path[car_path.index(road_id) + 1]
+                        # TODO： 此处由于重规划导致节点多次出现，对元素的正序索引会出现死循环的bug，通过倒序索引解决
+                        # next_road = car_path[car_path.index(road_id) + 1]
+
+                        # index = len(car_path) - car_path[::-1].index(road_id)
+                        # next_road = car_path[index]
+                        next_road = car_path[1]
 
                     next_posi = posi + car_speed
 
@@ -407,6 +419,12 @@ def super_time_plan(paths, car_df, road_df, cross_df):
 
                             #                            car_status.loc[car, 'status'] = -1
                             cars_arrived_count += 1
+###############
+                            edge = paths[car].pop(0)
+                            if paths_fianl.__contains__(car):
+                                paths_fianl[car].append(edge)
+                            else:
+                                paths_fianl[car] = [edge]
                             continue
 
                         # 判断下一条路的空位
@@ -421,11 +439,20 @@ def super_time_plan(paths, car_df, road_df, cross_df):
                             #                                road_status.loc[road_id, 'used1'] -= 1
 
                             #                                car_status.loc[car, 'status'] = next_road # 更新车辆状态
+###################
+                                edge = paths[car].pop(0)
+                                if paths_fianl.__contains__(car):
+                                    paths_fianl[car].append(edge)
+                                else:
+                                    paths_fianl[car] = [edge]
                             else:
                                 # 下一条路没有空位，走到该条路末端
                                 road_status.at[road_id, 'cars1'].update({car: road_len})
-                                print("go to next road failed...")
-                                print(road_status_cap1[next_road] - len(road_status['cars1'][next_road]))
+                                # path replan
+                                new_path = path_replan_with_time(car, car_path, road_id, next_road, adl_cut, adl, road_from_to, car_to)
+                                paths[car] = new_path
+                                # print("go to next road failed...")
+                                # print(road_status_cap1[next_road] - len(road_status['cars1'][next_road]))
                                 # TODO： 考虑重规划路径
                         # 另一个方向
                         elif road_df_to[road_id] == road_df_to[next_road]:
@@ -438,12 +465,22 @@ def super_time_plan(paths, car_df, road_df, cross_df):
                             #                                road_status.loc[road_id, 'used1'] -= 1
 
                             #                                car_status.loc[car, 'status'] = next_road  # 更新车辆状态
+###################
+                                edge = paths[car].pop(0)
+                                if paths_fianl.__contains__(car):
+                                    paths_fianl[car].append(edge)
+                                else:
+                                    paths_fianl[car] = [edge]
                             else:
                                 # 下一条路没有空位，走到该条路末端
                                 # TODO： 走到末端的设定不合理，待考虑
                                 road_status.at[road_id, 'cars1'].update({car: road_len})
-                                print("go to next road failed...")
-                                print(road_status_cap2[next_road] - len(road_status['cars2'][next_road]))
+                                # path replan
+                                new_path = path_replan_with_time(car, car_path, road_id, next_road, adl_cut, adl,
+                                                                 road_from_to, car_to)
+                                paths[car] = new_path
+                                # print("go to next road failed...")
+                                # print(road_status_cap2[next_road] - len(road_status['cars2'][next_road]))
                                 # TODO： 考虑重规划路径
 
             #            if road_used['used2'][road_id] > 0:
@@ -452,6 +489,7 @@ def super_time_plan(paths, car_df, road_df, cross_df):
                 #                for car, posi in car_on_road.items():
                 car_on_road = list(road_used_cars2[road_id].items())
                 for car, posi in car_on_road:
+                    car_debug = car
                     road_len = road_status_length[road_id]
                     #                    car_speed = car_status['speed'][car]
                     car_speed = car_df_speed[car]
@@ -463,7 +501,12 @@ def super_time_plan(paths, car_df, road_df, cross_df):
                         # 车在最后一段路上
                         next_road = road_id
                     else:
-                        next_road = car_path[car_path.index(road_id) + 1]
+                        # TODO： 此处由于重规划导致节点多次出现，对元素的正序索引会出现死循环的bug，通过倒序索引解决
+                        # next_road = car_path[car_path.index(road_id) + 1]
+
+                        # index = len(car_path) - car_path[::-1].index(road_id)
+                        # next_road = car_path[index]
+                        next_road = car_path[1]
 
                     next_posi = posi + car_speed
 
@@ -481,6 +524,14 @@ def super_time_plan(paths, car_df, road_df, cross_df):
 
                             #                            car_status.loc[car, 'status'] = -1
                             cars_arrived_count += 1
+
+###################
+                            edge = paths[car].pop(0)
+                            if paths_fianl.__contains__(car):
+                                paths_fianl[car].append(edge)
+                            else:
+                                paths_fianl[car] = [edge]
+
                             continue
 
                         # 判断下一条路的空位
@@ -495,11 +546,23 @@ def super_time_plan(paths, car_df, road_df, cross_df):
                             #                                road_status.loc[road_id, 'used2'] -= 1
 
                             #                                car_status.loc[car, 'status'] = next_road  # 更新车辆状态
+###################
+                                edge = paths[car].pop(0)
+                                if paths_fianl.__contains__(car):
+                                    paths_fianl[car].append(edge)
+                                else:
+                                    paths_fianl[car] = [edge]
+
                             else:
                                 # 下一条路没有空位，走到该条路末端
                                 road_status.at[road_id, 'cars2'].update({car: road_len})
-                                print("go to next road failed...")
-                                print(road_status_cap1[next_road] - len(road_status['cars1'][next_road]))
+
+                                # path replan
+                                new_path = path_replan_with_time(car, car_path, road_id, next_road, adl_cut, adl,
+                                                                 road_from_to, car_to)
+                                paths[car] = new_path
+                                # print("go to next road failed...")
+                                # print(road_status_cap1[next_road] - len(road_status['cars1'][next_road]))
                                 # TODO： 考虑重规划路径
                         # 另一个方向
                         elif road_df_from[road_id] == road_df_to[next_road]:
@@ -512,11 +575,23 @@ def super_time_plan(paths, car_df, road_df, cross_df):
                             #                                road_status.loc[road_id, 'used2'] -= 1
 
                             #                                car_status.loc[car, 'status'] = next_road  # 更新车辆状态
+###################
+                                edge = paths[car].pop(0)
+                                if paths_fianl.__contains__(car):
+                                    paths_fianl[car].append(edge)
+                                else:
+                                    paths_fianl[car] = [edge]
+
                             else:
                                 # 下一条路没有空位，走到该条路末端
                                 road_status.at[road_id, 'cars2'].update({car: road_len})
-                                print("go to next road failed...")
-                                print(road_status_cap2[next_road] - len(road_status['cars2'][next_road]))
+
+                                # path replan
+                                new_path = path_replan_with_time(car, car_path, road_id, next_road, adl_cut, adl,
+                                                                 road_from_to, car_to)
+                                paths[car] = new_path
+                                # print("go to next road failed...")
+                                # print(road_status_cap2[next_road] - len(road_status['cars2'][next_road]))
                                 # TODO： 考虑重规划路径
 
         ## 记录改时间片出发的车辆，以及路径信息（可能存在路径更新的车辆）
@@ -531,26 +606,115 @@ def super_time_plan(paths, car_df, road_df, cross_df):
         #        print('cap_rate:', cap_rate)
         # 可视化负载率,添加剩余待发车车辆数和到达车辆数
         y.append(np.array([i, cap_rate, car_num_count, cars_on_road, cars_arrived_count]))
-        plot_durations(np.array(y))
+        # plot_durations(np.array(y))
+
+        ## 重建邻接表
+        # 找出拥挤道路,删除其邻接关系
+        road_status['cut'] = road_status.apply(
+            lambda x: 1 if x['cap1'] - len(x['cars1']) < 3 or (3 > x['cap2'] - len(x['cars2']) > 0) else 0, axis=1)
+        road_cut = road_status.loc[road_status['cut'] == 1]
+        adl_cut = cut_adl(adwE, road_cut)
+        # print(len(adl_cut))
 
         ## 时间片终止条件：所有车到达终点
         #        if sum((list(car_status['status'] == -1))) == len(car_status['status']):
         #        if sum(list(road_status['used1'])) + sum(list(road_status['used2'])) == 0:
-        if sum(road_status['cars1'] != {}) + sum(road_status['cars2'] != {}) == 0:
+        # if sum(road_status['cars1'] != {}) + sum(road_status['cars2'] != {}) == 0:
+        if (road_status['used1'].sum() + road_status['used2'].sum()) == 0:
             print("all cars have arrived to the end and spend time is:", i)
             break
+        #
+        # if i > 640:
+        #     pa = paths[car_debug]
+        #     print("cannot arrive within 1500 time slice.")
+
 
         if i > 1500:
-            print("cannot arrive within 1000 time slice.")
+            print("cannot arrive within 1500 time slice.")
             break
     #        sys.exit()
-    car_df_time = car_df.copy(deep=True)
-    for carID in car_df_time['id']:
-        car_df_time.loc[carID, 'planTime'] = time_final[carID][1]
-    return time_final, car_df_time
+    # car_df_time = car_df.copy(deep=True)
+    # for carID in car_df_time['id']:
+    #     car_df_time.loc[carID, 'planTime'] = time_final[carID][1]
+
+    # paths_fianl = paths
+    return time_final,  paths_fianl
 
 
 ## TODO:优化程序运行速度，可能是对Dataframe的深拷贝导致耗时严重问题
+
+# 重规划路径
+def path_replan_with_time(car_id, car_path,
+                          road, next_road,
+                          adl_cut,
+                          adl,
+                          road_from_to,
+                          car_to):
+    st = [road_from_to['from'][road], road_from_to['to'][road]]
+    temp = [road_from_to['from'][next_road], road_from_to['to'][next_road]]
+    # 找重规划的起始点
+    if st[0] in temp:
+        st = st[0]
+    elif st[1] in temp:
+        st = st[1]
+    else:
+        raise Exception('something wrong...')
+
+    ed = car_to[car_id]
+
+    # 剪掉当前道路的邻接关系
+    adl_cut_twice = simple_cut(adl_cut, road_from_to['from'][road], road_from_to['to'][road])
+
+    try:
+        path_n = shortest_path(adl_cut_twice, st, ed)
+    except:
+        # 如果失败则为空
+        path_n = []
+    # 判断重规划是否成功
+    if len(path_n) != 0:
+        path_e = get_path_n2e(path_n, adl)
+
+        # cut_index = car_path.index(road) + 1
+
+        # new_path = car_path[:cut_index] + path_e
+        new_path = [road] + path_e
+    else:
+        new_path = car_path
+        # print('replan failed')
+
+    # if car_id == 10013:
+    #     print(new_path)
+
+    return new_path
+
+
+def simple_cut(adl_cut, road_from, road_to):
+    # 剪除当前道路自身的邻接关系
+    adl = deepcopy(adl_cut)
+    node = road_from
+    next_node = road_to
+    if adl.__contains__(node):
+        if adl[node].__contains__(next_node):
+                adl[node].pop(next_node)
+    if adl.__contains__(next_node):
+        if adl[next_node].__contains__(node):
+                adl[next_node].pop(node)
+    return adl
+
+
+def cut_adl(adl, rc):
+    adl_cut = deepcopy(adl)
+    for node, next_node in zip(rc['from'], rc['to']):
+        # 将双向邻接关系都剪断
+        if adl_cut.__contains__(node):
+            if adl_cut[node].__contains__(next_node):
+                adl_cut[node].pop(next_node)
+        if adl_cut.__contains__(next_node):
+            if adl_cut[next_node].__contains__(node):
+                adl_cut[next_node].pop(node)
+
+    return adl_cut
+
 
 ## 测试结果
 # path由get_all_paths_with_hc获得
@@ -729,9 +893,11 @@ if __name__ == '__main__':
 
     al = build_adjacency_list(cross_df, road_df)
     # pa = get_all_paths_with_weight_update(al, road_df, car_df, cross_df)
-    #    pa = get_all_paths_with_hc(al, road_df, car_df['id'], car_df['from'], car_df['to'])
+    # pa = get_all_paths_with_hc(al, road_df, car_df['id'], car_df['from'], car_df['to'])
     pa = get_all_cars_paths(al, car_df['id'], car_df['from'], car_df['to'], use_networkx=False)
-    time_plan, car_time = super_time_plan(pa, car_df, road_df, cross_df)
+    print(pa[10013])
+    time_plan,  path_plan = super_time_plan(pa, car_df, road_df, cross_df, al)
+    print(path_plan[10013])
     # print(time_plan)
     # print(car_time)
     print('end')

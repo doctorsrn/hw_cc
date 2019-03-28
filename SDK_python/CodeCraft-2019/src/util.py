@@ -413,7 +413,7 @@ def weight_func(time_cost, cha, cha_max=8, t_mean=3, la1=1, la2=0.5):
     return weight
 
 
-def update_weight(adwE_, path_n_, typeU=0, weight_factor=0.05):
+def update_weight(adwE_, path_n_, typeU=0, weight_factor=0.08):
     """
     根据道路使用情况实时更新道路权重，边使用次数为设边使用次数为N，则对该条边的权重影响为：
           weight = weight + N * 0.05
@@ -423,6 +423,7 @@ def update_weight(adwE_, path_n_, typeU=0, weight_factor=0.05):
                          =1表示将当前的path从之前的权重中去除
     weight_factor: 表示一条路在路径中出现一次对该路权重的影响因子，通过估计每条路车辆承载量
                    和weight原始范围[0.1, T_mean]来决定weight_factor的取值
+    log: weight_factor=0.05
     """
 
     # 根据path累加权重
@@ -765,6 +766,7 @@ def replan_for_hc(hc, path_origin_):
 
     return path_origin_
 
+
 # TODO: improve this function to multi-process
 def get_all_paths_with_hc(adl_list, road_df, carIDL, startL, endL, use_networkx=False):
 
@@ -808,6 +810,8 @@ def get_all_paths_with_weight_update(adl_list, road_df, car_df, cross_df, pathTy
     pathType： 路径规划的方法:  =0: 基于HC
                              =1: 基于HP
                              =2: 基于原始Dijkstra算法
+    log: i>800 get_time_plan5 controlcarnum = 38:  411 422
+         i>800 get_time_plan5 controlcarnum = 39   
     """
     # 根据每辆车的计划出发时间进行升序排列
     car_df_sort = car_df.sort_values(by=['planTime', 'id'], axis=0, ascending=[True, True])
@@ -912,21 +916,21 @@ def get_all_paths_with_weight_update(adl_list, road_df, car_df, cross_df, pathTy
 
 
 def get_all_paths_with_hc_cw(adl_list, road_df, cardf, use_networkx=False):
-    #每规划一辆车的路径，所经过的路上权重增加weightAddValue
-    #达到interval时恢复原来的权重
+    # 每规划一辆车的路径，所经过的路上权重增加weightAddValue
+    # 达到interval时恢复原来的权重
 
-    # 根据每辆车的计划出发时间进行升序排列 速度降序排列
-    car_df_sort = cardf.sort_values(by=['planTime', 'speed'], axis=0, ascending=[True, False])
-
+    # 根据每辆车的计划出发时间进行升序排列 速度降序排列 id升序排列
+    car_df_sort = cardf.sort_values(by=['planTime', 'speed', 'id'], axis=0, ascending=[True, False, True])
 
     carIDL = car_df_sort['id']
     startL = car_df_sort['from']
     endL = car_df_sort['to']
-    size = carIDL.shape[0]
+    carnum = carIDL.shape[0]
+
+    adl_list_w = convert_adl2adl_w(adl_list)
 
     # 深拷贝
-    tempdict = copy.deepcopy(adl_list)
-    adl_list_w = convert_adl2adl_w(tempdict)
+    tempdict = copy.deepcopy(adl_list_w)
 
     """
     #权重变化函数1
@@ -934,28 +938,32 @@ def get_all_paths_with_hc_cw(adl_list, road_df, cardf, use_networkx=False):
     #最优参数 weightAddValue = 0.01 shares = 9
     weightAddValue = 0.01
     shares = 9
-    interval = int(size / shares)
+    interval = int(carnum / shares)
     """
 
-    #权重变化函数2
-    #指数衰减
-    #最优参数 factor = 3  shares = 9
+    # 权重变化函数2
+    # 指数衰减
+    # 最优参数 factor = 3  shares = 9
     factor = 3
     shares = 9
-    interval = int(size / shares)
+    interval = int(carnum / shares)
 
     paths_e = {}
 
     i = 1
 
     # 剪枝
-    dp, sp, rp = cut_adjacency_list(adl_list, road_df, cut_channel_level=2, cut_speed_level=2)
-    _, hc = get_bestHCHP(dp)
+    # 最优参数 cut_channel_level=2, cut_speed_level=2
+    # 此参数可能会导致未使用hc 直接使用dikstra算法
+    dp, sp, rp = cut_adjacency_list(adl_list, road_df, cut_channel_level=1, cut_speed_level=2)
+    hp, hc = get_bestHCHP(dp)
+    print(hc)
+    # print(hp)
 
     # 基于get_path_with_hp()函数进行路径规划
     # 为所有车各规划一条最短路径
-    print("get_all_paths_with_hc_cw:")
-    for carID, st, ed in tqdm(zip(carIDL, startL, endL)):
+    # print("get_all_paths_with_hc_cw:")
+    for carID, st, ed in zip(carIDL, startL, endL):
         try:
             #            path_n = get_path_with_hp(new_ad, adl_list, hp, st, ed)
             #            path_n = get_path_with_hp_simple(adl_list, hp, st, ed)
@@ -963,9 +971,9 @@ def get_all_paths_with_hc_cw(adl_list, road_df, cardf, use_networkx=False):
         except:
             # print("hp", hp)
             # print("error:st, ed", st, ed)
-            path_n = shortest_path(adl_list_w, st, ed)
+            path_n = shortest_path(tempdict, st, ed)
 
-            path_n = replan_for_hc(hc, path_n)
+            # path_n = replan_for_hc(hc, path_n)
 
         # 将规划得到的节点构成的路径转换为边构成的路径
         path_e = get_path_n2e(path_n, adl_list)
@@ -975,19 +983,157 @@ def get_all_paths_with_hc_cw(adl_list, road_df, cardf, use_networkx=False):
         # 更新权重
         if (i % interval) == 0:
             # 深拷贝
-            tempdict = copy.deepcopy(adl_list)
-            adl_list_w = convert_adl2adl_w(tempdict)
+            tempdict = copy.deepcopy(adl_list_w)
         else:
-            for k in range(len(path_n)-1):
+
+            # 权重变化函数1
+            # addvalue = max(weightAddValue * (interval-2*(i % interval))/interval, 0)
+            # 权重变化函数2
+            addvalue = np.exp(-factor * interval / (interval - (i % interval)))
+
+            for k in range(len(path_n) - 1):
                 cross_last = path_n[k]
-                cross_next = path_n[k+1]
+                cross_next = path_n[k + 1]
 
-                # 权重变化函数1
-                #addvalue = max(weightAddValue * (interval-2*(i % interval))/interval, 0)
-                # 权重变化函数2
-                addvalue = np.exp(-factor * interval / (interval - (i % interval)))
+                tempdict[cross_last][cross_next] += addvalue
 
-                tempdict[cross_last][cross_next][1] += addvalue
+        i += 1
+
+    return paths_e
+
+
+def getallpaths_dj_cw(adl_list, road_df, cardf, use_networkx=False):
+    # 每规划一辆车的路径，所经过的路上权重增加addvalue
+    # 达到interval时恢复原来的权重
+
+    # 根据每辆车的计划出发时间进行升序排列 速度降序排列 id升序排列
+    car_df_sort = cardf.sort_values(by=['planTime', 'speed', 'id'], axis=0, ascending=[True, False, True])
+    # print(car_df_sort.head(10))
+
+    carIDL = car_df_sort['id']
+    startL = car_df_sort['from']
+    endL = car_df_sort['to']
+    carnum = carIDL.shape[0]
+
+    adl_list_w = convert_adl2adl_w(adl_list)
+
+    # 深拷贝
+    tempdict = copy.deepcopy(adl_list_w)
+
+    """
+    #权重变化函数1
+    # 单调递减
+    #最优参数 weightAddValue = 0.01 shares = 9
+    weightAddValue = 0.01
+    shares = 9
+    interval = int(carnum / shares)
+    """
+
+    # 权重变化函数2
+    # 指数衰减
+    # 最优参数 factor = 3  shares = 9
+    factor = 3
+    shares = 9
+    interval = int(carnum / shares)
+
+    paths_e = {}
+
+    i = 1
+
+    # 为所有车各规划一条最短路径
+    for carID, st, ed in zip(carIDL, startL, endL):
+        path_n = shortest_path(tempdict, st, ed)
+
+        # 将规划得到的节点构成的路径转换为边构成的路径
+        path_e = get_path_n2e(path_n, adl_list)
+
+        paths_e[carID] = path_e
+
+        # 更新权重
+        if (i % interval) == 0:
+            # 深拷贝
+            tempdict = copy.deepcopy(adl_list_w)
+        else:
+
+            # 权重变化函数1
+            # addvalue = max(weightAddValue * (interval-2*(i % interval))/interval, 0)
+            # 权重变化函数2
+            addvalue = np.exp(-factor * interval / (interval - (i % interval)))
+
+            # print(addvalue)
+            for k in range(len(path_n) - 1):
+                cross_last = path_n[k]
+                cross_next = path_n[k + 1]
+                # print(tempdict[cross_last][cross_next])
+
+                tempdict[cross_last][cross_next] += addvalue
+
+                # print(tempdict[cross_last][cross_next])
+
+        i += 1
+
+    return paths_e
+
+
+def getallpaths_dj_cw2(adl_list, road_df, cardf, use_networkx=False):
+    # 每规划一辆车的路径，所经过的路上权重增加addvalue
+    # 根据车速和道路速度的倒数来变权重
+    # 达到interval时恢复原来的权重
+
+    # 根据每辆车的计划出发时间进行升序排列 速度降序排列 id升序排列
+    car_df_sort = cardf.sort_values(by=['planTime', 'speed', 'id'], axis=0, ascending=[True, False, True])
+    # print(car_df_sort.head(10))
+
+    carIDL = car_df_sort['id']
+    startL = car_df_sort['from']
+    endL = car_df_sort['to']
+    carnum = carIDL.shape[0]
+
+    adl_list_w = convert_adl2adl_w(adl_list)
+
+    # 深拷贝
+    tempdict = copy.deepcopy(adl_list_w)
+
+    # 最优参数 9
+    shares = 5
+    interval = int(carnum / shares)
+
+    paths_e = {}
+
+    i = 1
+
+    # 为所有车各规划一条最短路径
+    for carID, st, ed in zip(carIDL, startL, endL):
+        path_n = shortest_path(tempdict, st, ed)
+
+        # 将规划得到的节点构成的路径转换为边构成的路径
+        path_e = get_path_n2e(path_n, adl_list)
+
+        paths_e[carID] = path_e
+
+        # 更新权重
+        if (i % interval) == 0:
+            # 深拷贝
+            tempdict = copy.deepcopy(adl_list_w)
+        else:
+
+            carspeed = cardf['speed'][carID]
+            for k in range(len(path_n) - 1):
+                cross_last = path_n[k]
+                cross_next = path_n[k + 1]
+                # print(tempdict[cross_last][cross_next])
+
+                roadname = adl_list[cross_last][cross_next][0]
+                # print(roadname)
+                maxspeed = min(road_df['speed'][roadname], carspeed)
+
+                addvalue = 1/(maxspeed*road_df['channel'][roadname])
+
+                # addvalue = road_df['length'][roadname] / (maxspeed * road_df['channel'][roadname])
+
+                tempdict[cross_last][cross_next] += addvalue
+
+                # print(tempdict[cross_last][cross_next])
 
         i += 1
 
@@ -1098,12 +1244,13 @@ def get_allcarspaths_floyd(adl_list, cardf):
     if not len(carIDL) == len(startL) ==len(endL):
         raise Exception("input size of  carIDL, startL, endL not equal")
 
-    Floydpath = init_Floyd(adl_list)
+    adl_list_w = convert_adl2adl_w(adl_list)
+    Floydpath = init_Floyd(adl_list_w)
 
     paths = {}
 
     # 为所有车各规划一条最短路径
-    print("get_allcarspaths_floyd:")
+    # print("get_allcarspaths_floyd:")
     for carID, st, ed in tqdm(zip(carIDL, startL, endL)):
         path_n = get_floyd_path(Floydpath, st, ed)
 
@@ -1111,6 +1258,86 @@ def get_allcarspaths_floyd(adl_list, cardf):
         path_e = get_path_n2e(path_n, adl_list)
 
         paths[carID] = path_e
+
+    return paths
+
+
+def get_allcarspaths_floyd_cw(adl_list, cardf):
+    """
+    brief: floyd获取所有车的一条最短路径
+    :param adl_list: 带有边ID的邻接表
+    :param carIDL: carID 列表
+    :return: paths: 数据格式:字典{carID： [edge path]}
+    """
+    # 根据每辆车的计划出发时间进行升序排列 速度降序排列
+    car_df_sort = cardf.sort_values(by=['planTime', 'speed'], axis=0, ascending=[True, False])
+
+    carIDL = car_df_sort['id']
+    startL = car_df_sort['from']
+    endL = car_df_sort['to']
+    carnum = car_df_sort.shape[0]
+
+    # 检查传入的参数是否合理
+    if not len(carIDL) == len(startL) == len(endL):
+        raise Exception("input size of  carIDL, startL, endL not equal")
+
+    adl_list_w = convert_adl2adl_w(adl_list)
+
+    # 深拷贝
+    tempdict = copy.deepcopy(adl_list_w)
+
+    """
+    #权重变化函数1
+    # 单调递减
+    #最优参数 weightAddValue = 0.01 shares = 9
+    weightAddValue = 0.01
+    shares = 9
+    interval = int(carnum / shares)
+    """
+
+    # 权重变化函数2
+    # 指数衰减
+    # 最优参数 factor = 3  shares = 9
+    factor = 3
+    shares = 1000
+    interval = int(carnum / shares)
+
+    Floydpath = init_Floyd(tempdict)
+
+    paths = {}
+
+    i = 1
+
+    # 为所有车各规划一条最短路径
+    for carID, st, ed in zip(carIDL, startL, endL):
+        path_n = get_floyd_path(Floydpath, st, ed)
+
+        # 将规划得到的节点构成的路径转换为边构成的路径
+        path_e = get_path_n2e(path_n, adl_list)
+
+        paths[carID] = path_e
+
+        # 更新权重
+        if (i % interval) == 0:
+            Floydpath = init_Floyd(tempdict)
+            # 深拷贝
+            tempdict = copy.deepcopy(adl_list_w)
+        else:
+
+            # 权重变化函数1
+            # addvalue = max(weightAddValue * (interval-2*(i % interval))/interval, 0)
+            # 权重变化函数2
+            addvalue = np.exp(-factor * interval / (interval - (i % interval)))
+
+            for k in range(len(path_n) - 1):
+                cross_last = path_n[k]
+                cross_next = path_n[k + 1]
+
+                tempdict[cross_last][cross_next] += addvalue
+
+            # Floydpath = init_Floyd(tempdict)
+
+        i += 1
 
     return paths
 
@@ -1364,7 +1591,7 @@ def get_all_paths_with_hp(adl_list, road_df, carIDL, startL, endL, use_networkx=
 
 def replan_for_hp(hp, path_):
     """
-    将规划出来的path_从
+    将规划出来的path_接入hp
     :param hp:
     :param path_:
     :return:

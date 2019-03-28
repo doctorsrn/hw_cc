@@ -53,14 +53,22 @@ def main():
 
     # # get time plans
     # # 效果最好的是get_time_plan6
-    # time_plans, car_df_actual = get_time_plan6(car_df)
+    time_plans, car_df_actual = get_time_plan5(car_df)
     # pa = get_all_cars_paths(ad_l, car_df['id'], car_df['from'], car_df['to'], use_networkx=False)
     # time_plans, car_df_actual = get_time_plan7(pa, car_df, road_df, cross_df)
 
     # super time plan test
     # pa = get_all_cars_paths(ad_l, car_df['id'], car_df['from'], car_df['to'], use_networkx=False)
-    pa = get_all_paths_with_hc(ad_l, road_df, car_df['id'], car_df['from'], car_df['to'])
-    time_plans, car_df_actual = super_time_plan(pa, car_df, road_df, cross_df)
+    # pa = get_all_paths_with_hc(ad_l, road_df, car_df['id'], car_df['from'], car_df['to'])
+    # time_plans, car_df_actual = super_time_plan(pa, car_df, road_df, cross_df)
+
+    # pa = get_all_cars_paths(ad_l, car_df['id'], car_df['from'], car_df['to'], use_networkx=False)
+    paths = get_all_paths_with_weight_update(ad_l, road_df, car_df_actual, cross_df, pathType=2, update_w=True)
+    # time_plans, paths = super_time_plan(pa, car_df, road_df, cross_df, ad_l)
+
+    # 效果最好的是 getallpaths_dj_cw 和 getallpaths_dj_cw2
+    # paths = getallpaths_dj_cw(ad_l, road_df, car_df_actual)
+    # paths = getallpaths_dj_cw2(ad_l, road_df, car_df_actual)
 
     # plan8
     # time_plans = get_time_plan8(car_df, road_df, cross_df)
@@ -70,7 +78,7 @@ def main():
     # 效果最好的是 get_all_paths_with_hc_cw
     # paths = get_all_cars_paths(ad_l, car_df['id'], car_df['from'], car_df['to'], use_networkx=False)
     # paths = get_all_paths_with_hc(ad_l, road_df, car_df['id'], car_df['from'], car_df['to'])
-    paths = get_all_paths_with_weight_update(ad_l, road_df, car_df_actual, cross_df, update_w=True)
+    # paths = get_all_paths_with_weight_update(ad_l, road_df, car_df_actual, cross_df, update_w=True)
     # paths = get_allcarspaths_floyd(ad_l, car_df)
     # paths = get_all_cars_paths(ad_l, car_df['id'], car_df['from'], car_df['to'], use_networkx=False)
     # paths = get_all_cars_paths_cw(ad_l, car_df, use_networkx=False)
