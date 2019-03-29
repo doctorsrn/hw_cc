@@ -413,7 +413,7 @@ def weight_func(time_cost, cha, cha_max=8, t_mean=3, la1=1, la2=0.5):
     return weight
 
 
-def update_weight(adwE_, path_n_, typeU=0, weight_factor=0.11):
+def update_weight(adwE_, path_n_, typeU=0, weight_factor=0.15):
     """
     根据道路使用情况实时更新道路权重，边使用次数为设边使用次数为N，则对该条边的权重影响为：
           weight = weight + N * 0.05
