@@ -64,6 +64,7 @@ def get_time_plan6(car_df):
     # car_df_sort = car_df.sort_values(by='planTime', axis=0, ascending=True)
     # 根据每辆车的计划出发时间进行升序排列 速度降序排列
     car_df_sort = car_df.sort_values(by=['planTime', 'speed', 'id'], axis=0, ascending=[True, False, True])
+    # car_df_sort = car_df.sort_values(by=['speed', 'id'], axis=0, ascending=[False, True])
     # print(car_df_sort.head(50))
 
     carsum = car_df_sort.shape[0]
@@ -307,7 +308,8 @@ def get_time_plan5(car_df):
     分批出发，某一时刻发车数量多于一定数量顺延
     '''
     # 最优参数
-    controlcarnum = 39  # 37
+    controlcarnum = 40  # weight_factor=0.08 37 39:414 414  42:405 fail 41: 422 421  40:420 416
+                        # weight_factor=0.1  42: 415 fail
 
     time_plans = {}
 

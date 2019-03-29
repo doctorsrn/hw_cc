@@ -877,7 +877,7 @@ def get_time_plan9(paths, car_df, road_df, cross_df):
     分批出发，某一时刻发车数量多于一定数量顺延
     '''
     # 最优参数
-    controlcarnum = 39  # 37
+    controlcarnum = 37  # 37
 
     time_plans = {}
 

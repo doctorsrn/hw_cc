@@ -424,6 +424,10 @@ def update_weight(adwE_, path_n_, typeU=0, weight_factor=0.08):
     weight_factor: 表示一条路在路径中出现一次对该路权重的影响因子，通过估计每条路车辆承载量
                    和weight原始范围[0.1, T_mean]来决定weight_factor的取值
     log: weight_factor=0.05
+         weight_factor=0.08 controlcarnum = 41  # 37 39:414 414  42:405 fail
+         weight_factor=0.1 42:415 fail
+         weight_factor=0.05 42:412 fail
+         weight_factor=0.03 42:failed fail
     """
 
     # 根据path累加权重
@@ -830,10 +834,6 @@ def get_all_paths_with_weight_update(adl_list, road_df, car_df, cross_df, pathTy
     # i > 150,100,80  m1 failed
     # i > 150,100,80 m2 succeed
     # cut_channel_level=0  1563 i > 350     controlcarnum = 35 m1 failed
-    dp, sp, rp = cut_adjacency_list(adl_list, road_df, cut_channel_level=1, cut_speed_level=1)
-
-    _, hc = get_bestHCHP_with_direction(dp, adl_list, cross_df, searchNum=400)
-
     ## 为了更新权重使用的一些参数和变量
     pathQueue = Queue()
     i = 0
@@ -849,6 +849,8 @@ def get_all_paths_with_weight_update(adl_list, road_df, car_df, cross_df, pathTy
             try:
                 #                path_n = get_path_with_hp(new_ad, adl_list, hp, st, ed)
                 #                path_n = get_path_with_hp_simple(adl_list, hp, st, ed)
+                dp, sp, rp = cut_adjacency_list(adl_list, road_df, cut_channel_level=1, cut_speed_level=1)
+                _, hc = get_bestHCHP_with_direction(dp, adl_list, cross_df, searchNum=400)
                 path_n = get_path_with_hc_simple(adl_list_w, hc, st, ed)
 
             except:
@@ -868,12 +870,12 @@ def get_all_paths_with_weight_update(adl_list, road_df, car_df, cross_df, pathTy
                     # 然后是权重消减，表示当前车已经行驶玩这条路径，所以要释放这条路
                     # TODO: 设置合理的开始消减权重的条件，当前设置为第100辆车之后开始消减
                     # # 50 100 m1 failed  250 m1 succeed  350 succeed
-                    if i > 800 or startFlag:
-                        startFlag = 1
-                        if not pathQueue.empty():
-                            # 从路径队列中取出路径，消减该路径在在权重中的影响
-                            path_out = pathQueue.get()
-                            adl_list_w = update_weight(adl_list_w, path_out, typeU=1)
+                    # if i > 800 or startFlag:
+                    #     startFlag = 1
+                    #     if not pathQueue.empty():
+                    #         # 从路径队列中取出路径，消减该路径在在权重中的影响
+                    #         path_out = pathQueue.get()
+                    #         adl_list_w = update_weight(adl_list_w, path_out, typeU=1)
 
         elif pathType == 1:  # 基于HP
             raise Exception("not finish")
@@ -892,12 +894,12 @@ def get_all_paths_with_weight_update(adl_list, road_df, car_df, cross_df, pathTy
                 # 然后是权重消减，表示当前车已经行驶玩这条路径，所以要释放这条路
                 # TODO: 设置合理的开始消减权重的条件，当前设置为第100辆车之后开始消减
                 # 50 100 m1 failed
-                if i > 800 or startFlag:
-                    startFlag = 1
-                    if not pathQueue.empty():
-                        # 从路径队列中取出路径，消减该路径在在权重中的影响
-                        path_out = pathQueue.get()
-                        adl_list_w = update_weight(adl_list_w, path_out, typeU=1)
+                # if i > 800 or startFlag:
+                #     startFlag = 1
+                #     if not pathQueue.empty():
+                #         # 从路径队列中取出路径，消减该路径在在权重中的影响
+                #         path_out = pathQueue.get()
+                #         adl_list_w = update_weight(adl_list_w, path_out, typeU=1)
 
         # m2 succeed
         # 重置权重
