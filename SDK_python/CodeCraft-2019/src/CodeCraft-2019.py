@@ -1,7 +1,8 @@
 import logging
 import sys
 from util import *
-from util1 import *
+# from util1 import *
+import util1 as u1
 from IOModule import *
 import os
 
@@ -52,10 +53,10 @@ def main():
 
 
     # # get time plans
-    # # 效果最好的是get_time_plan6
-    time_plans, car_df_actual = get_time_plan5(car_df)
-    # pa = get_all_cars_paths(ad_l, car_df['id'], car_df['from'], car_df['to'], use_networkx=False)
-    # time_plans, car_df_actual = get_time_plan7(pa, car_df, road_df, cross_df)
+    # # 效果最好的是get_time_plan5
+    # time_plans, car_df_actual = get_time_plan5(car_df)
+    pa = get_all_cars_paths(ad_l, car_df['id'], car_df['from'], car_df['to'], use_networkx=False)
+    time_plans, car_df_actual = u1.get_time_plan9(pa, car_df, road_df, cross_df)
 
     # super time plan test
     # pa = get_all_cars_paths(ad_l, car_df['id'], car_df['from'], car_df['to'], use_networkx=False)

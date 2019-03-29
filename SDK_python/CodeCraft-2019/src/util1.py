@@ -872,6 +872,55 @@ def get_time_plan8(car_df, road_df, cross_df):
     return time_plans
 
 
+def get_time_plan9(paths, car_df, road_df, cross_df):
+    '''
+    分批出发，某一时刻发车数量多于一定数量顺延
+    '''
+    # 最优参数
+    controlcarnum = 39  # 37
+
+    time_plans = {}
+
+    # # 根据每辆车的计划出发时间进行升序排列 速度降序排列 id升序
+    # # car_df_sort = car_df.sort_values(by=['planTime', 'speed', 'id'], axis=0, ascending=[True, False, True])
+    # # 根据每辆车的速度降序排列 id升序
+    # car_df_sort = car_df.sort_values(by=['speed', 'id'], axis=0, ascending=[False, True])
+    # # print(car_df_sort.head(20))
+
+
+    car_df_sort = car_df.copy(deep=True)
+    # 添加时间消耗列，并使用理想情况的路径时间消耗为该列赋值
+    car_df_sort['timeCost'] = 0
+    car_tcost, _ = get_benchmark(paths, car_df, road_df, cross_df)
+    for car_id, tcost in car_tcost.items():
+        car_df_sort.loc[car_id, 'timeCost'] = tcost
+
+    # car_df_sort.sort_values(by=['planTime', 'timeCost', 'id'], axis=0, ascending=[True, True, True], inplace=True)
+    car_df_sort.sort_values(by=['timeCost', 'id'], axis=0, ascending=[True, True], inplace=True)
+
+    carsum = car_df_sort.shape[0]
+
+
+    i = 1
+    timemax_last = -1
+    idtime = -1
+    for carID, pT in zip(car_df_sort['id'], car_df_sort['planTime']):
+        idtime = max(timemax_last, pT)
+        time_plans[carID] = [carID, idtime]
+        car_df_sort.loc[carID, 'planTime'] = idtime  # 记录实际安排的出发时间
+        if idtime > timemax_last:
+            timemax_last=idtime
+        else:
+            pass
+
+        if (i % controlcarnum) == 0:
+            timemax_last += 1
+        i += 1
+
+    print("max plantime: ", timemax_last)
+    return time_plans, car_df_sort
+
+
 if __name__ == '__main__':
     rpath = '../config0'
     path = rpath + '/cross.txt'

@@ -811,7 +811,7 @@ def get_all_paths_with_weight_update(adl_list, road_df, car_df, cross_df, pathTy
                              =1: 基于HP
                              =2: 基于原始Dijkstra算法
     log: i>800 get_time_plan5 controlcarnum = 38:  411 422
-         i>800 get_time_plan5 controlcarnum = 39   
+         i>800 get_time_plan5 controlcarnum = 39   411 failed
     """
     # 根据每辆车的计划出发时间进行升序排列
     car_df_sort = car_df.sort_values(by=['planTime', 'id'], axis=0, ascending=[True, True])

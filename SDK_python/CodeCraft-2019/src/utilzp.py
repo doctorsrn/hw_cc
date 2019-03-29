@@ -323,7 +323,7 @@ def get_time_plan5(car_df):
     for carID, pT in zip(car_df_sort['id'], car_df_sort['planTime']):
         idtime = max(timemax_last, pT)
         time_plans[carID] = [carID, idtime]
-        car_df_sort['planTime'][carID] = idtime  # 记录实际安排的出发时间
+        car_df_sort.loc[carID, 'planTime'] = idtime  # 记录实际安排的出发时间
         if idtime > timemax_last:
             timemax_last=idtime
         else:
@@ -373,7 +373,7 @@ def get_time_plan8(car_df):
     for carID, pT in zip(car_df_sort['id'], car_df_sort['planTime']):
         idtime = max(timemax_last,pT)
         time_plans[carID] = [carID, idtime]
-        car_df_sort['planTime'][carID] = idtime  # 记录实际安排的出发时间
+        car_df_sort.loc[carID, 'planTime']= idtime  # 记录实际安排的出发时间
         if idtime > timemax_last:
             timemax_last=idtime
         else:
