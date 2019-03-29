@@ -196,14 +196,20 @@ def super_time_plan(paths, car_df, road_df, cross_df, adl=None):
     car_status['status'] = 0
     car_status.drop(columns=['from', 'to', 'speed', 'planTime'])  # 删除不使用的数据
 
-    # 构建发车池，利用理想情况的时间消耗来决定发车顺序
+    # # 构建发车池，利用理想情况的时间消耗来决定发车顺序
+    # cars_pool = car_df.copy(deep=True)
+    # cars_pool.drop(columns=['from', 'to', 'speed'], inplace=True)  # 删除不使用的数据
+    # # 添加时间消耗列，并使用理想情况的路径时间消耗为该列赋值
+    # cars_pool['timeCost'] = 0
+    # car_tcost, _ = get_benchmark(paths, car_df, road_df, cross_df)
+    # for car_id, tcost in car_tcost.items():
+    #     cars_pool.loc[car_id, 'timeCost'] = tcost
+
     cars_pool = car_df.copy(deep=True)
     cars_pool.drop(columns=['from', 'to', 'speed'], inplace=True)  # 删除不使用的数据
-    # 添加时间消耗列，并使用理想情况的路径时间消耗为该列赋值
-    cars_pool['timeCost'] = 0
-    car_tcost, _ = get_benchmark(paths, car_df, road_df, cross_df)
-    for car_id, tcost in car_tcost.items():
-        cars_pool.loc[car_id, 'timeCost'] = tcost
+    cars_pool.sort_values(by=['planTime', 'id'], axis=0, ascending=[True, True])
+
+
     # print('t_cost:', cars_pool.head())
 
     # TODO：无效信息：### raod_status: {roadID: {from: [cap, used, {carID: position, carID:position..}], to: [cap, used, {carID: position, carID:position..}]}, roadID:...}
@@ -256,7 +262,9 @@ def super_time_plan(paths, car_df, road_df, cross_df, adl=None):
 
         ## 选取当前时间片要出发的车
         # 对发车池的车按照出发时刻和理想状态到达目的地的时间消耗按从小到达排序进行排
-        cars_pool.sort_values(by=['planTime', 'timeCost', 'id'], axis=0, ascending=[True, True, True], inplace=True)
+        # cars_pool.sort_values(by=['planTime', 'timeCost', 'id'], axis=0, ascending=[True, True, True], inplace=True)
+        cars_pool.sort_values(by=['planTime', 'id'], axis=0, ascending=[True, True])
+
         # 得到应该该时刻出发的车
         temp_car = cars_pool[cars_pool['planTime'] == i]
         # print("cars_pool:", cars_pool.head())
@@ -265,7 +273,8 @@ def super_time_plan(paths, car_df, road_df, cross_df, adl=None):
 
         # TODO: 设置实时改变carnum的函数
         # update_car_num()
-        car_num = car_num_update(i, cap_rate)
+        # car_num = car_num_update(i, cap_rate)
+        car_num = 40
 
         # 选出要发的车
         # 判断是否满足发车条件，满足则发车，不满足则考虑延后发车或者路径重规划
@@ -620,9 +629,10 @@ def super_time_plan(paths, car_df, road_df, cross_df, adl=None):
         #        if sum((list(car_status['status'] == -1))) == len(car_status['status']):
         #        if sum(list(road_status['used1'])) + sum(list(road_status['used2'])) == 0:
         # if sum(road_status['cars1'] != {}) + sum(road_status['cars2'] != {}) == 0:
-        if (road_status['used1'].sum() + road_status['used2'].sum()) == 0:
-            print("all cars have arrived to the end and spend time is:", i)
-            break
+        if i > 50:
+            if (road_status['used1'].sum() + road_status['used2'].sum()) == 0:
+                print("all cars have arrived to the end and spend time is:", i)
+                break
         #
         # if i > 640:
         #     pa = paths[car_debug]

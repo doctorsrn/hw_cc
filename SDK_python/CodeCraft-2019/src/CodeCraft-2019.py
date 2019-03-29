@@ -65,6 +65,8 @@ def main():
 
     # pa = get_all_cars_paths(ad_l, car_df['id'], car_df['from'], car_df['to'], use_networkx=False)
     paths = get_all_paths_with_weight_update(ad_l, road_df, car_df_actual, cross_df, pathType=2, update_w=True)
+
+    # time_plans, paths = u1.super_time_plan(paths, car_df_actual, road_df, cross_df, ad_l)
     # time_plans, paths = super_time_plan(pa, car_df, road_df, cross_df, ad_l)
 
     # 效果最好的是 getallpaths_dj_cw 和 getallpaths_dj_cw2

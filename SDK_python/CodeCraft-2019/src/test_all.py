@@ -13,7 +13,7 @@ from concurrent.futures import ProcessPoolExecutor
 
 def main():
 
-    rpath = '../config3'
+    rpath = '../config1'
     path = rpath + '/cross.txt'
     path1 = rpath + '/road.txt'
     path2 = rpath + '/car.txt'
@@ -55,6 +55,9 @@ def main():
     paths = get_all_paths_with_weight_update(al, road_df, car_df_actual, cross_df, pathType=2, update_w=True)
     t2 = time.clock()
 
+    time_plans, paths = super_time_plan(paths, car_df_actual, road_df, cross_df, al)
+    t22 = time.clock()
+
     answers = get_answer(car_df['id'], paths, time_plans)
     t3 = time.clock()
 
@@ -63,7 +66,8 @@ def main():
 
     print('CPU cost time for get time plan:', t1 - start_time)
     print('CPU cost time for path plan: ', t2 - t1)
-    print('CPU cost time for get answer: ', t3 - t2)
+    print('CPU cost time for path replan: ', t22 - t2)
+    print('CPU cost time for get answer: ', t3 - t22)
     print('CPU cost time for write answer: ', t4 - t3)
     print('CPU cost time for all: ', t4 - start_time)
 

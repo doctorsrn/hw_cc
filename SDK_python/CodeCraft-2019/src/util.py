@@ -413,7 +413,7 @@ def weight_func(time_cost, cha, cha_max=8, t_mean=3, la1=1, la2=0.5):
     return weight
 
 
-def update_weight(adwE_, path_n_, typeU=0, weight_factor=0.08):
+def update_weight(adwE_, path_n_, typeU=0, weight_factor=0.1):
     """
     根据道路使用情况实时更新道路权重，边使用次数为设边使用次数为N，则对该条边的权重影响为：
           weight = weight + N * 0.05
@@ -424,8 +424,8 @@ def update_weight(adwE_, path_n_, typeU=0, weight_factor=0.08):
     weight_factor: 表示一条路在路径中出现一次对该路权重的影响因子，通过估计每条路车辆承载量
                    和weight原始范围[0.1, T_mean]来决定weight_factor的取值
     log: weight_factor=0.05
-         weight_factor=0.08 controlcarnum = 41  # 37 39:414 414  42:405 fail
-         weight_factor=0.1 42:415 fail
+         weight_factor=0.08 controlcarnum = 41  # 37 39:414 414  42:405 fail    3 6 40s  3 6 41s
+         weight_factor=0.1 42:415 fail  41s(414,410)
          weight_factor=0.05 42:412 fail
          weight_factor=0.03 42:failed fail
     """
@@ -822,12 +822,12 @@ def get_all_paths_with_weight_update(adl_list, road_df, car_df, cross_df, pathTy
     # car_len = len(car_df_sort['id'])
 
     paths = {}
-    # size = car_df_sort['id'].shape[0]
-    # shares = 9
+    size = car_df_sort['id'].shape[0]
+    shares = 4
 
     adl_list_w = convert_adl2adl_w(adl_list)
-    # adl_list_w_bkp = copy.deepcopy(adl_list_w)
-    # interval = int(size / shares)
+    adl_list_w_bkp = copy.deepcopy(adl_list_w)
+    interval = int(size / shares)
 
     # 剪枝
     # cut_channel_level=1 2629   cut_channel_level=2 774+668  cut_channel_level=3 583+dead lock
@@ -903,11 +903,12 @@ def get_all_paths_with_weight_update(adl_list, road_df, car_df, cross_df, pathTy
 
         # m2 succeed
         # 重置权重
-        # if i % interval == 0:
-        #     adl_list_w = adl_list_w_bkp
+        if i % interval == 0:
+            adl_list_w = adl_list_w_bkp
         #
         #     i = 0
         #     startFlag = 0
+        # log : 重置权重  weight_factor=0.1
 
         # 将规划得到的节点构成的路径转换为边构成的路径
         path_e = get_path_n2e(path_n, adl_list)
