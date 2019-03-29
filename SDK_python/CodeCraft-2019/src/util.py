@@ -819,15 +819,15 @@ def get_all_paths_with_weight_update(adl_list, road_df, car_df, cross_df, pathTy
     """
     # 根据每辆车的计划出发时间进行升序排列
     car_df_sort = car_df.sort_values(by=['planTime', 'id'], axis=0, ascending=[True, True])
-    car_len = len(car_df_sort['id'])
+    # car_len = len(car_df_sort['id'])
 
     paths = {}
-    size = car_df_sort['id'].shape[0]
-    shares = 9
+    # size = car_df_sort['id'].shape[0]
+    # shares = 9
 
     adl_list_w = convert_adl2adl_w(adl_list)
-    adl_list_w_bkp = copy.deepcopy(adl_list_w)
-    interval = int(size / shares)
+    # adl_list_w_bkp = copy.deepcopy(adl_list_w)
+    # interval = int(size / shares)
 
     # 剪枝
     # cut_channel_level=1 2629   cut_channel_level=2 774+668  cut_channel_level=3 583+dead lock
@@ -889,7 +889,7 @@ def get_all_paths_with_weight_update(adl_list, road_df, car_df, cross_df, pathTy
             if update_w:
                 adl_list_w = update_weight(adl_list_w, path_n, typeU=0)
                 # 将累加过的路径添加至队列中。消减权重时使用
-                pathQueue.put(path_n)
+                # pathQueue.put(path_n)
 
                 # 然后是权重消减，表示当前车已经行驶玩这条路径，所以要释放这条路
                 # TODO: 设置合理的开始消减权重的条件，当前设置为第100辆车之后开始消减

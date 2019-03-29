@@ -13,35 +13,62 @@ from concurrent.futures import ProcessPoolExecutor
 
 def main():
 
-    rpath = '../config1'
+    rpath = '../config3'
     path = rpath + '/cross.txt'
     path1 = rpath + '/road.txt'
     path2 = rpath + '/car.txt'
     path3 = rpath + '/answer.txt'
+    answer_path = rpath + '/answer.txt'
 
     df = read_from_txt(path)
-    print(df.head())
-    print(df.shape)
+    # print(df.head())
+    # print(df.shape)
 
     df1 = read_from_txt(path1)
-    print(df1.head())
-    print(df1.shape)
+    # print(df1.head())
+    # print(df1.shape)
 
     df2 = read_from_txt(path2)
-    print(df2.head())
-    print(df2.shape)
+    # print(df2.head())
+    # print(df2.shape)
 
     car_df = df2
     road_df = df1
     cross_df = df
 
     al = build_adjacency_list(df, df1)
-    print("al:", al)
+    # print("al:", al)
+    #
+    # print("adwE:", convert_adl2adl_w(al))
+    #
+    # adw = build_ad_list_without_edge_id(df, df1)
+    # print("adwE:", adw)
 
-    print("adwE:", convert_adl2adl_w(al))
 
-    adw = build_ad_list_without_edge_id(df, df1)
-    print("adwE:", adw)
+
+    # final test
+
+    start_time = time.clock()
+    time_plans, car_df_actual = get_time_plan5(car_df)
+    t1 = time.clock()
+
+    paths = get_all_paths_with_weight_update(al, road_df, car_df_actual, cross_df, pathType=2, update_w=True)
+    t2 = time.clock()
+
+    answers = get_answer(car_df['id'], paths, time_plans)
+    t3 = time.clock()
+
+    write_answer2file(answer_path, answers)
+    t4 = time.clock()
+
+    print('CPU cost time for get time plan:', t1 - start_time)
+    print('CPU cost time for path plan: ', t2 - t1)
+    print('CPU cost time for get answer: ', t3 - t2)
+    print('CPU cost time for write answer: ', t4 - t3)
+    print('CPU cost time for all: ', t4 - start_time)
+
+    sys.exit(0)
+
 
     # test cut_adjacency_list
     # dp, sp, rp: duplex connect pairs,single connect pairs, rest pairs
@@ -67,6 +94,8 @@ def main():
     print('len of nodes and pairs:', len(nodes), len(dp))
     nodes.sort()
     print(nodes)
+
+
     
     ########### get HC test
 #    graph = HamiltonianPath(len(nodes))
