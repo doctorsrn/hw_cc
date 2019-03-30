@@ -9,7 +9,7 @@ from IOModule import read_from_txt
 import matplotlib.pyplot as plt
 
 
-rpath = '../config0'
+rpath = '../config1'
 cross_path = rpath + '/cross.txt'
 road_path = rpath + '/road.txt'
 car_path = rpath + '/car.txt'
