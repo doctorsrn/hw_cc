@@ -13,7 +13,7 @@ from concurrent.futures import ProcessPoolExecutor
 
 def main():
 
-    rpath = '../config1'
+    rpath = '../config0'
     path = rpath + '/cross.txt'
     path1 = rpath + '/road.txt'
     path2 = rpath + '/car.txt'

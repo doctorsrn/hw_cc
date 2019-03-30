@@ -780,6 +780,7 @@ def main():
     # create car objects
     # line = (id,from,to,speed,planTime)
     for line in carInfo:
+        # print(line)
         id_, from_, to_, speed_, planTime_ = line.replace(' ', '').replace('\t', '')[1:-1].split(',')
         CARNAMESPACE.append(int(id_))
         CARDICT[int(id_)] = CAR(int(id_), int(from_), int(to_), int(speed_), int(planTime_))

@@ -319,7 +319,8 @@ def super_time_plan(paths, car_df, road_df, cross_df, adl=None):
                 else:
                     # 不可以发车：车依旧为等待发车状态，将发车时间片向后推1个时间片
                     # 更新发车池
-                    cars_pool.loc[carID, 'planTime'] += 1
+                    # cars_pool.loc[carID, 'planTime'] += 1
+                    cars_pool['planTime'][carID] += 1
 
             elif road_df_from[start_road] in [road_df_from[next_road], road_df_to[next_road]]:
                 #                if road_status['cap2'][start_road] - road_status['used2'][start_road] > 2:
@@ -340,14 +341,15 @@ def super_time_plan(paths, car_df, road_df, cross_df, adl=None):
                     time_final[carID] = [carID, i]
                 else:
                     # 不能出发的车放回发车池，并且修改其出发时间为下一个时间片
-                    cars_pool.loc[carID, 'planTime'] += 1
+                    # cars_pool.loc[carID, 'planTime'] += 1
+                    cars_pool['planTime'][carID] += 1
             else:
                 print("something wrong...")
 
             # for DEBUG
-            g_car_status = car_status
-            g_cars_pool = cars_pool
-            g_road_status = road_status
+            # g_car_status = car_status
+            # g_cars_pool = cars_pool
+            # g_road_status = road_status
             #            print(cars_pool.head())
             #            print(road_status)
             #            print(car_status)
@@ -359,7 +361,7 @@ def super_time_plan(paths, car_df, road_df, cross_df, adl=None):
         ## 将发车池中时间片为本时刻的车向后推迟一个时间片, 其余时间片不改变
         cars_pool['planTime'] = cars_pool.planTime.apply(lambda x: x + 1 if x == i else x)
         # for DEBUG
-        g_cars_pool1 = cars_pool
+        # g_cars_pool1 = cars_pool
         #        print(cars_pool.head())
 
         # 按照路口、道路的顺序进行车辆状态更新
@@ -377,7 +379,7 @@ def super_time_plan(paths, car_df, road_df, cross_df, adl=None):
         #        road_used = deepcopy(road_status.loc[(road_status['used1'] > 0) | (road_status['used2'] > 0)])
         road_used = road_status.loc[(road_status['used1'] > 0) | (road_status['used2'] > 0)].copy(deep=True)
         #        road_used = road_status.loc[(len(road_status['cars1']) > 0) | (len(road_status['cars2']) > 0)].copy(deep=True)
-        g_road_used = road_used
+        # g_road_used = road_used
 
         # 将series转换为dict，优化速度
         road_used_cars1 = road_used['cars1'].to_dict()
@@ -781,7 +783,8 @@ def get_time_plan7(paths, car_df, road_df, cross_df):
     car_df_sort['timeCost'] = 0
     car_tcost, _ = get_benchmark(paths, car_df, road_df, cross_df)
     for car_id, tcost in car_tcost.items():
-        car_df_sort.loc[car_id, 'timeCost'] = tcost
+        # car_df_sort.loc[car_id, 'timeCost'] = tcost
+        car_df_sort['timeCost'][car_id] = tcost
 
     car_df_sort.sort_values(by=['planTime', 'timeCost', 'id'], axis=0, ascending=[True, True, True], inplace=True)
 

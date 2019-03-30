@@ -903,8 +903,8 @@ def get_all_paths_with_weight_update(adl_list, road_df, car_df, cross_df, pathTy
 
         # m2 succeed
         # 重置权重
-        if i % interval == 0:
-            adl_list_w = adl_list_w_bkp
+        # if i % interval == 0:
+        #     adl_list_w = adl_list_w_bkp
         #
         #     i = 0
         #     startFlag = 0
