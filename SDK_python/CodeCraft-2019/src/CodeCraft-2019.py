@@ -48,13 +48,13 @@ def main():
     # process
 
     # build adjacency list
-    ad_l = build_adjacency_list(cross_df, road_df)
+    ad_l = build_adjacency_list4(cross_df, road_df)
     # ad_l = build_adjacency_list2(cross_df, road_df)
 
 
     # # get time plans
     # # 效果最好的是get_time_plan5
-    time_plans, car_df_actual = get_time_plan5(car_df)
+    time_plans, car_df_actual = get_time_plan8(car_df)
     # pa = get_all_cars_paths(ad_l, car_df['id'], car_df['from'], car_df['to'], use_networkx=False)
     # time_plans, car_df_actual = u1.get_time_plan9(pa, car_df, road_df, cross_df)
 
@@ -64,7 +64,8 @@ def main():
     # time_plans, car_df_actual = super_time_plan(pa, car_df, road_df, cross_df)
 
     # pa = get_all_cars_paths(ad_l, car_df['id'], car_df['from'], car_df['to'], use_networkx=False)
-    paths = get_all_paths_with_weight_update(ad_l, road_df, car_df_actual, cross_df, pathType=2, update_w=True)
+    # paths = get_all_paths_with_weight_update(ad_l, road_df, car_df_actual, cross_df, pathType=2, update_w=True)
+    paths = getallpaths_dj_cw2(ad_l, road_df, car_df_actual)
 
     time_plans, paths = u1.super_time_plan(paths, car_df_actual, road_df, cross_df, ad_l)
     # time_plans, paths = super_time_plan(pa, car_df, road_df, cross_df, ad_l)

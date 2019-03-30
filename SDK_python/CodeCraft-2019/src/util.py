@@ -1097,8 +1097,15 @@ def getallpaths_dj_cw2(adl_list, road_df, cardf, use_networkx=False):
     # 深拷贝
     tempdict = copy.deepcopy(adl_list_w)
 
+    # if cardf['from'][10000] == 18:
+    #     shares = 0.5
+    # else:
+    #     shares = 0.5
+
+
     # 最优参数 9
-    shares = 5
+    # shares小于1相当于没有权重刷新过程
+    shares = 0.5
     interval = int(carnum / shares)
 
     paths_e = {}

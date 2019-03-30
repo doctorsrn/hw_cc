@@ -308,7 +308,7 @@ def get_time_plan5(car_df):
     分批出发，某一时刻发车数量多于一定数量顺延
     '''
     # 最优参数
-    controlcarnum = 100  # weight_factor=0.08 37 39:414 414  42:405 fail 41: 422 421  40:420 416
+    controlcarnum = 150  # weight_factor=0.08 37 39:414 414  42:405 fail 41: 422 421  40:420 416
                         # weight_factor=0.1  42: 415 fail
     temp = 0
 
@@ -336,12 +336,12 @@ def get_time_plan5(car_df):
 
         if (i % controlcarnum) == 0:
             temp = temp+1
-            if temp < 3:   # 3     5
+            if temp < 5:   # 3     5
                 controlcarnum = 80
-            elif temp < 6: # 6     10 386 failed
+            elif temp < 10: # 6     10 386 failed
                 controlcarnum = 60
             else:
-                controlcarnum = 48 #45
+                controlcarnum = 55 #45
                 #3 6 40s 42f 41s(410,414) 38s(416,415)
                 # 5 10 40f 386
 
@@ -370,15 +370,34 @@ def get_time_plan8(car_df):
     timemax_last = -1
     idtime = -1
 
+    # if car_df['from'][10000] == 18:
+    #     # 发车数量控制3
+    #     # 正弦发车，基准值先降再固定
+    #     # 最优参数 a=1 b=0.9 controlcarnum = 30 change = 3
+    #     a = 1.0  # 控制最开始发车数量为a*controlcarnum
+    #     b = 0  # 控制b*carsum辆车以后发车数量固定为controlcarnum
+    #     controlcarnum = 35
+    #     change = 4
+    #     timeperiod = 2000
+    # else:
+    #     # 发车数量控制3
+    #     # 正弦发车，基准值先降再固定
+    #     # 最优参数 a=1 b=0.9 controlcarnum = 30 change = 3
+    #     a = 1.0  # 控制最开始发车数量为a*controlcarnum
+    #     b = 0  # 控制b*carsum辆车以后发车数量固定为controlcarnum
+    #     controlcarnum = 35
+    #     change = 4
+    #     timeperiod = 2000
+
+
     # 发车数量控制3
     # 正弦发车，基准值先降再固定
     # 最优参数 a=1 b=0.9 controlcarnum = 30 change = 3
     a = 1.0  # 控制最开始发车数量为a*controlcarnum
-    b = 0.9  # 控制b*carsum辆车以后发车数量固定为controlcarnum
-    controlcarnum = 30
-    change = 3
-    shares = 5
-    timeperiod = 200
+    b = 0  # 控制b*carsum辆车以后发车数量固定为controlcarnum
+    controlcarnum = 47
+    change = 5
+    timeperiod = 6000
     if i < b * carsum:
         controltemp = int(controlcarnum * (a + ((1 - a) * (i - 1)) / (b * carsum)))
     else:
@@ -389,7 +408,8 @@ def get_time_plan8(car_df):
     for carID, pT in zip(car_df_sort['id'], car_df_sort['planTime']):
         idtime = max(timemax_last,pT)
         time_plans[carID] = [carID, idtime]
-        car_df_sort.loc[carID, 'planTime']= idtime  # 记录实际安排的出发时间
+        car_df_sort['planTime'][carID] = idtime  # 记录实际安排的出发时间
+        # car_df_sort.loc[carID, 'planTime'] = idtime  # 记录实际安排的出发时间
         if idtime > timemax_last:
             timemax_last=idtime
         else:
@@ -410,7 +430,6 @@ def get_time_plan8(car_df):
     print("max plantime: ", timemax_last)
 
     return time_plans, car_df_sort
-
 
 def weight_func2(road_l, road_mv, road_channel):
     #考虑长度/速度/车道数

@@ -168,7 +168,7 @@ def car_num_update(time_slice, load_rate=0, carsum=0):
 
 def super_time_plan(paths, car_df, road_df, cross_df, adl=None):
     """
-    尝试基于时间迭代的实时路径规划与时间规划
+    尝试基于伪判题器的时间迭代下的实时路径规划与时间规划
     :type paths: 所有车的理想路径，可以是基于HC的路径或者直接Dijkstra的路径,数据格式:字典{carID： [edge path]}
     :return:
     """
@@ -251,7 +251,8 @@ def super_time_plan(paths, car_df, road_df, cross_df, adl=None):
     ## 绘图线程
 
     # 超参数
-    car_num = 25  # 每个时间片发车数量
+    car_num = 110  # 每个时间片发车数量
+    temp_count = 0
     cap_rate = 0  # 道路负载率
     cars_arrived_count = 0
     car_debug = 0
@@ -274,7 +275,15 @@ def super_time_plan(paths, car_df, road_df, cross_df, adl=None):
         # TODO: 设置实时改变carnum的函数
         # update_car_num()
         # car_num = car_num_update(i, cap_rate)
-        car_num = 40
+        car_num = 50
+        # if (i % car_num) == 0:
+        #     temp_count = temp_count+1
+        #     if temp_count < 3:   # 3     5
+        #         car_num = 80
+        #     elif temp_count < 8: # 6     10 386 failed
+        #         car_num = 60
+        #     else:
+        #         car_num = 50 #45
 
         # 选出要发的车
         # 判断是否满足发车条件，满足则发车，不满足则考虑延后发车或者路径重规划
@@ -301,7 +310,7 @@ def super_time_plan(paths, car_df, road_df, cross_df, adl=None):
             if road_df_to[start_road] in [road_df_from[next_road], road_df_to[next_road]]:
                 # 判断剩余车位，保证车位余量大于2
                 #                if road_status['cap1'][start_road] - road_status['used1'][start_road] > 2:
-                if road_status_cap1[start_road] - len(road_status['cars1'][start_road]) > 2:
+                if road_status_cap1[start_road] - len(road_status['cars1'][start_road]) > 4:
                     # print(1)
                     # 可以发车
                     # 更新车的状态，更新发车池的状态、更新道路使用的状态
@@ -324,7 +333,7 @@ def super_time_plan(paths, car_df, road_df, cross_df, adl=None):
 
             elif road_df_from[start_road] in [road_df_from[next_road], road_df_to[next_road]]:
                 #                if road_status['cap2'][start_road] - road_status['used2'][start_road] > 2:
-                if road_status_cap2[start_road] - len(road_status['cars2'][start_road]) > 2:
+                if road_status_cap2[start_road] - len(road_status['cars2'][start_road]) > 4:
                     # print(2)
                     # 可以发车
                     # 更新车的状态，更新发车池的状态、更新道路使用的状态
@@ -442,7 +451,7 @@ def super_time_plan(paths, car_df, road_df, cross_df, adl=None):
                         # 先判断方向
                         if road_df_to[road_id] == road_df_from[next_road]:
                             #                            if road_status['cap1'][next_road] - road_status['used1'][next_road] > 2:
-                            if road_status_cap1[next_road] - len(road_status['cars1'][next_road]) > 2:
+                            if road_status_cap1[next_road] - len(road_status['cars1'][next_road]) > 4:
                                 # 下一条路满足进入要求，进入下一条路
                                 road_status.at[next_road, 'cars1'].update({car: next_posi})  # 为下一条路添加车信息
                                 #                                road_status.loc[next_road, 'used1'] += 1
@@ -468,7 +477,7 @@ def super_time_plan(paths, car_df, road_df, cross_df, adl=None):
                         # 另一个方向
                         elif road_df_to[road_id] == road_df_to[next_road]:
                             #                            if road_status['cap2'][next_road] - road_status['used2'][next_road] > 2:
-                            if road_status_cap2[next_road] - len(road_status['cars2'][next_road]) > 2:
+                            if road_status_cap2[next_road] - len(road_status['cars2'][next_road]) > 4:
                                 # 下一条路满足进入要求，进入下一条路
                                 road_status.at[next_road, 'cars2'].update({car: next_posi})  # 为下一条路添加车信息
                                 #                                road_status.loc[next_road, 'used2'] += 1
@@ -549,7 +558,7 @@ def super_time_plan(paths, car_df, road_df, cross_df, adl=None):
                         # 先判断方向
                         if road_df_from[road_id] == road_df_from[next_road]:
                             #                            if road_status['cap1'][next_road] - road_status['used1'][next_road] > 2:
-                            if road_status_cap1[next_road] - len(road_status['cars1'][next_road]) > 2:
+                            if road_status_cap1[next_road] - len(road_status['cars1'][next_road]) > 4:
                                 # 下一条路满足进入要求，进入下一条路
                                 road_status.at[next_road, 'cars1'].update({car: next_posi})  # 为下一条路添加车信息
                                 #                                road_status.loc[next_road, 'used1'] += 1
@@ -578,7 +587,7 @@ def super_time_plan(paths, car_df, road_df, cross_df, adl=None):
                         # 另一个方向
                         elif road_df_from[road_id] == road_df_to[next_road]:
                             #                            if road_status['cap2'][next_road] - road_status['used2'][next_road] > 2:
-                            if road_status_cap2[next_road] - len(road_status['cars2'][next_road]) > 2:
+                            if road_status_cap2[next_road] - len(road_status['cars2'][next_road]) > 4:
                                 # 下一条路满足进入要求，进入下一条路
                                 road_status.at[next_road, 'cars2'].update({car: next_posi})  # 为下一条路添加车信息
                                 #                                road_status.loc[next_road, 'used2'] += 1
@@ -858,31 +867,31 @@ i>600 controlcarnum = 26 3 11 剪枝参数cut_channel_level=1, cut_speed_level=1
 """
 
 
-def get_time_plan8(car_df, road_df, cross_df):
-    """
-    brief: 按照车辆出发点和终止点分类后发车
-    成绩： +500 m2 1040 m1 failed
-    :param car_df:
-    :return:
-    """
-    time_plans = {}
-
-    half_node_num = int(len(cross_df['id'])/2)
-
-    # 根据每辆车的计划出发时间进行升序排列
-    # car_df_sort = car_df.sort_values(by='planTime', axis=0, ascending=True)
-    # road_used = road_status.loc[(road_status['used1'] > 0) | (road_status['used2'] > 0)].copy(deep=True)
-    first_part = car_df.loc[(car_df['from'] <= half_node_num)].copy(deep=True)
-    second_part = car_df.loc[(car_df['from'] > half_node_num)].copy(deep=True)
-
-    for carID, pT in zip(first_part['id'], first_part['planTime']):
-        time_plans[carID] = [carID, pT]
-
-    for carID, pT in zip(second_part['id'], second_part['planTime']):
-        pT += 300
-        time_plans[carID] = [carID, pT]
-
-    return time_plans
+# def get_time_plan8(car_df, road_df, cross_df):
+#     """
+#     brief: 按照车辆出发点和终止点分类后发车
+#     成绩： +500 m2 1040 m1 failed
+#     :param car_df:
+#     :return:
+#     """
+#     time_plans = {}
+#
+#     half_node_num = int(len(cross_df['id'])/2)
+#
+#     # 根据每辆车的计划出发时间进行升序排列
+#     # car_df_sort = car_df.sort_values(by='planTime', axis=0, ascending=True)
+#     # road_used = road_status.loc[(road_status['used1'] > 0) | (road_status['used2'] > 0)].copy(deep=True)
+#     first_part = car_df.loc[(car_df['from'] <= half_node_num)].copy(deep=True)
+#     second_part = car_df.loc[(car_df['from'] > half_node_num)].copy(deep=True)
+#
+#     for carID, pT in zip(first_part['id'], first_part['planTime']):
+#         time_plans[carID] = [carID, pT]
+#
+#     for carID, pT in zip(second_part['id'], second_part['planTime']):
+#         pT += 300
+#         time_plans[carID] = [carID, pT]
+#
+#     return time_plans
 
 
 def get_time_plan9(paths, car_df, road_df, cross_df):

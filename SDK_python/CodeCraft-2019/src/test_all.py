@@ -36,7 +36,7 @@ def main():
     road_df = df1
     cross_df = df
 
-    al = build_adjacency_list(df, df1)
+    al = build_adjacency_list4(df, df1)
     # print("al:", al)
     #
     # print("adwE:", convert_adl2adl_w(al))
@@ -50,10 +50,11 @@ def main():
     # final test
 
     start_time = time.clock()
-    time_plans, car_df_actual = get_time_plan5(car_df)
+    time_plans, car_df_actual = get_time_plan8(car_df)
     t1 = time.clock()
 
-    paths = get_all_paths_with_weight_update(al, road_df, car_df_actual, cross_df, pathType=2, update_w=True)
+    # paths = get_all_paths_with_weight_update(al, road_df, car_df_actual, cross_df, pathType=2, update_w=True)
+    paths = getallpaths_dj_cw2(al, road_df, car_df_actual)
     t2 = time.clock()
 
     time_plans, paths = super_time_plan(paths, car_df_actual, road_df, cross_df, al)
