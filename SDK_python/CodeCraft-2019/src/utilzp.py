@@ -308,7 +308,7 @@ def get_time_plan5(car_df):
     分批出发，某一时刻发车数量多于一定数量顺延
     '''
     # 最优参数
-    controlcarnum = 150  # weight_factor=0.08 37 39:414 414  42:405 fail 41: 422 421  40:420 416
+    controlcarnum = 120  # weight_factor=0.08 37 39:414 414  42:405 fail 41: 422 421  40:420 416
                         # weight_factor=0.1  42: 415 fail
     temp = 0
 
@@ -341,7 +341,7 @@ def get_time_plan5(car_df):
             elif temp < 10: # 6     10 386 failed
                 controlcarnum = 60
             else:
-                controlcarnum = 55 #45
+                controlcarnum = 52 #45
                 #3 6 40s 42f 41s(410,414) 38s(416,415)
                 # 5 10 40f 386
 
@@ -395,7 +395,7 @@ def get_time_plan8(car_df):
     # 最优参数 a=1 b=0.9 controlcarnum = 30 change = 3
     a = 1.0  # 控制最开始发车数量为a*controlcarnum
     b = 0  # 控制b*carsum辆车以后发车数量固定为controlcarnum
-    controlcarnum = 47
+    controlcarnum = 48
     change = 5
     timeperiod = 6000
     if i < b * carsum:

@@ -275,7 +275,7 @@ def super_time_plan(paths, car_df, road_df, cross_df, adl=None):
         # TODO: 设置实时改变carnum的函数
         # update_car_num()
         # car_num = car_num_update(i, cap_rate)
-        car_num = 50
+        car_num = 52
         # if (i % car_num) == 0:
         #     temp_count = temp_count+1
         #     if temp_count < 3:   # 3     5
