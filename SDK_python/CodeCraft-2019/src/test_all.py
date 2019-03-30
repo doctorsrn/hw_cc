@@ -44,7 +44,8 @@ def main():
     # adw = build_ad_list_without_edge_id(df, df1)
     # print("adwE:", adw)
 
-
+    # adj_list_visualize(al)
+    # exit(0)
 
     # final test
 

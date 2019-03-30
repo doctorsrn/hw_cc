@@ -639,7 +639,7 @@ def super_time_plan(paths, car_df, road_df, cross_df, adl=None):
         #     print("cannot arrive within 1500 time slice.")
 
 
-        if i > 1500:
+        if i > 2500:
             print("cannot arrive within 1500 time slice.")
             break
     #        sys.exit()

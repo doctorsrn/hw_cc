@@ -105,8 +105,18 @@ venv.bak/
 
 # config
 SDK_python/CodeCraft-2019/config0/answer.txt
-/SDK_python/CodeCraft-2019/config*/*
+SDK_python/CodeCraft-2019/config*/*
 /SDK_python/.gitignore
 /SDK_python/CodeCraft-2019/src/test.py
 test.zip
 parameter log
+
+SDK_python/CodeCraft-2019/config0/answer.txt
+SDK_python/CodeCraft-2019/config0/car.txt
+SDK_python/CodeCraft-2019/config0/cross.txt
+SDK_python/CodeCraft-2019/config0/road.txt
+SDK_python/CodeCraft-2019/config1/answer.txt
+SDK_python/CodeCraft-2019/config1/car.txt
+SDK_python/CodeCraft-2019/config1/cross.txt
+SDK_python/CodeCraft-2019/config1/road.txt
+
