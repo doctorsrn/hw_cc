@@ -1,5 +1,5 @@
 # hw_cc
-huawei 2019 code craft
+huawei 2019 code-craft preliminary contest
 
 
 一些重要的参考网站和参赛经验：
